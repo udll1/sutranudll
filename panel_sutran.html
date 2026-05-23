@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SUTRAN UDLL - Panel de Asistencia</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0B0F1E;--bg2:#141929;--bg3:#1C2440;--border:#2A3560;
+  --blue:#5B9BFF;--blue2:#2563EB;--green:#10D9A0;--red:#FF5B7A;
+  --yellow:#FFB830;--purple:#A78BFA;--cyan:#22D3EE;--orange:#FB923C;
+  --text:#EEF2FF;--text2:#8BA3CC;--text3:#4A6080;
+  --r:10px;--r-sm:6px;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.topbar{background:linear-gradient(90deg,#1C2440,#0B0F1E);border-bottom:1px solid #2A3560;padding:0 24px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-badge{background:var(--blue2);color:white;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;padding:4px 10px;border-radius:4px;letter-spacing:1px}
+.brand-name{font-size:13px;color:var(--text2)}
+.reloj{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text3)}
+.layout{display:flex;height:calc(100vh - 58px)}
+.sidebar{width:228px;background:linear-gradient(180deg,#1C2440 0%,#0B0F1E 100%);border-right:1px solid var(--border);padding:12px 0;flex-shrink:0;overflow-y:auto;display:flex;flex-direction:column}
+.main{flex:1;overflow-y:auto;padding:28px}
+.sidebar-label{padding:6px 16px;font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-top:12px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all 0.15s}
+.nav-item:hover{background:rgba(79,142,247,0.06);color:var(--text)}
+.nav-item.active{background:rgba(79,142,247,0.1);color:var(--blue);border-left-color:var(--blue);font-weight:500}
+.nav-item svg{width:15px;height:15px;stroke:currentColor;fill:none;flex-shrink:0}
+.sidebar-bottom{margin-top:auto;padding:12px 16px;border-top:1px solid var(--border)}
+.mes-selector label{font-size:11px;color:var(--text3);font-weight:500;display:block;margin-bottom:4px}
+.mes-selector select{width:100%;font-size:12px;padding:6px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);height:32px;margin-bottom:4px}
+.panel{display:none}.panel.active{display:block}
+.page-title{font-size:20px;font-weight:600;margin-bottom:4px;letter-spacing:-0.3px}
+.page-sub{font-size:13px;color:var(--text2);margin-bottom:24px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 4px 16px rgba(0,0,0,0.4);padding:20px;margin-bottom:16px}
+.card-title{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;position:relative;overflow:hidden}
+.stat::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%}
+.stat.blue::before{background:var(--blue)}.stat.green::before{background:var(--green)}
+.stat.red::before{background:var(--red)}.stat.yellow::before{background:var(--yellow)}
+.stat.purple::before{background:var(--purple)}.stat.cyan::before{background:var(--cyan)}
+.stat-val{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:600}
+.stat.blue .stat-val{color:var(--blue)}.stat.green .stat-val{color:var(--green)}
+.stat.red .stat-val{color:var(--red)}.stat.yellow .stat-val{color:var(--yellow)}
+.stat.purple .stat-val{color:var(--purple)}.stat.cyan .stat-val{color:var(--cyan)}
+.stat-label{font-size:12px;color:var(--text3);margin-top:6px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.btn{font-family:'Inter',sans-serif;font-size:13px;padding:0 14px;height:36px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg3);color:var(--text);cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.15s;white-space:nowrap}
+.btn:hover{background:var(--bg2);border-color:var(--text3)}
+.btn-primary{background:var(--blue2);border-color:var(--blue2);color:white;font-weight:500}
+.btn-primary:hover{background:#1D4ED8}
+.btn-green{background:#15803D;border-color:#15803D;color:white;font-weight:500}
+.btn-red{background:#991B1B;border-color:#991B1B;color:white;font-weight:500}
+.btn svg{width:14px;height:14px;stroke:currentColor;fill:none}
+input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);height:36px;transition:border-color 0.15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
+textarea{height:auto;resize:vertical}
+.table-wrap{overflow-x:auto;border-radius:var(--r);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:0.8px;color:var(--text3);padding:10px 12px;text-align:left;background:var(--bg3);border-bottom:1px solid var(--border);white-space:nowrap;text-transform:uppercase}
+td{padding:9px 12px;border-bottom:1px solid rgba(45,50,80,0.6);color:var(--text);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(79,142,247,0.03)}
+.mono{font-family:'JetBrains Mono',monospace;font-size:12px}
+.badge{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:500;display:inline-block}
+.b-A{background:#14532D;color:#86EFAC}.b-DS{background:#1E3A5F;color:#93C5FD}
+.b-CP{background:#78350F;color:#FCD34D}.b-V{background:#4C1D95;color:#C4B5FD}
+.b-FE,.b-FR{background:#7F1D1D;color:#FCA5A5}.b-CO{background:#0C4A6E;color:#7DD3FC}
+.b-T{background:#451A03;color:#FDE68A}.b-F{background:#7F1D1D;color:#FCA5A5}
+.b-REVISION{background:#374151;color:#F87171}.b-PROGRAMADO{background:#1E3A5F;color:#93C5FD}
+.estado-bar{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0;animation:pulse 2s infinite}
+.dot.ok{background:var(--green);animation:none}.dot.err{background:var(--red);animation:none}.dot.loading{background:var(--yellow)}
+.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.form-field label{font-size:11px;color:var(--text3);display:block;margin-bottom:4px;font-weight:500}
+.form-field input,.form-field select{width:100%}
+.rep-wrap{overflow-x:auto}
+.rep-table{border-collapse:collapse;font-size:11px;white-space:nowrap}
+.rep-table th{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text3);padding:6px 4px;text-align:center;background:var(--bg3);border:1px solid var(--border);min-width:26px}
+.rep-table th.lname{text-align:left;min-width:160px}
+.rep-table td{padding:4px 3px;border:1px solid rgba(45,50,80,0.5);text-align:center}
+.rep-table td.lname{text-align:left;padding:4px 8px;font-size:12px}
+.loading-cell{text-align:center;padding:32px;color:var(--text3);font-size:13px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+@media print{.topbar,.sidebar,.btn-row,.no-print{display:none!important}.layout{height:auto;display:block}.main{padding:0}body{background:white;color:black}.card{border:none;background:white}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-badge">SUTRAN</div>
+    <div class="brand-name">Unidad Desconcentrada La Libertad   Control de Asistencia</div>
+  </div>
+  <div class="reloj" id="reloj"></div>
+</div>
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-label">Principal</div>
+    <div class="nav-item active" onclick="nav('dashboard',this)">
+      <svg viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard
+    </div>
+    <div class="nav-item" onclick="nav('programacion',this)">
+      <svg viewBox="0 0 24 24" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Programacion
+    </div>
+    <div class="sidebar-label">Reportes</div>
+    <div class="nav-item" onclick="nav('asistencia',this)">
+      <svg viewBox="0 0 24 24" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Asistencia Final
+    </div>
+    <div class="nav-item" onclick="nav('mensual',this)">
+      <svg viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Reporte Mensual
+    </div>
+    <div class="nav-item" onclick="nav('imprimir',this)">
+      <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Reporte para Firmas
+    </div>
+    <div class="nav-item" onclick="nav('consulta',this)">
+      <svg viewBox="0 0 24 24" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Consulta Trabajador
+    </div>
+    <div class="sidebar-label">Procesos</div>
+    <div class="nav-item" onclick="nav('procesos',this)">
+      <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>Ejecutar Procesos
+    </div>
+    <div class="sidebar-label">Gestion</div>
+    <div class="nav-item" onclick="nav('regmanual',this)">
+      <svg viewBox="0 0 24 24" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Registro Manual
+    </div>
+    <div class="nav-item" onclick="nav('personal',this)">
+      <svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Configuracion
+    </div>
+    <div class="nav-item" onclick="nav('biometrico',this)">
+      <svg viewBox="0 0 24 24" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Biometrico
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="mes-selector">
+        <label>Mes activo</label>
+        <select id="g-mes">
+          <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+          <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+          <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+          <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+        </select>
+        <select id="g-anio"><option value="2027">2027</option><option value="2026" selected>2026</option><option value="2025">2025</option><option value="2024">2024</option></select>
+      </div>
+    </div>
+  </div>
+  <div class="main">
+
+    <!-- DASHBOARD -->
+    <div class="panel active" id="p-dashboard">
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub">Resumen general del mes seleccionado</div>
+      <div class="btn-row no-print">
+        <button class="btn btn-primary" onclick="cargarDashboard()"><svg viewBox="0 0 24 24" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>Actualizar</button>
+      </div>
+      <div class="stats-grid">
+        <div class="stat blue"><div class="stat-val" id="s-personal"> </div><div class="stat-label">Personal registrado</div></div>
+        <div class="stat green"><div class="stat-val" id="s-asist"> </div><div class="stat-label">Asistencias (A)</div></div>
+        <div class="stat red"><div class="stat-val" id="s-faltas"> </div><div class="stat-label">Faltas (F)</div></div>
+        <div class="stat cyan"><div class="stat-val" id="s-foto"> </div><div class="stat-label">Marcaciones foto</div></div>
+        <div class="stat purple"><div class="stat-val" id="s-bio"> </div><div class="stat-label">Marcaciones biometrico</div></div>
+        <div class="stat yellow"><div class="stat-val" id="s-ds"> </div><div class="stat-label">Descansos (DS)</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title"> ltimos registros</div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Nombre</th><th>Lugar</th><th>Fecha</th><th>H.Prog</th><th>Entrada</th><th>Salida</th><th>Estado</th></tr></thead>
+          <tbody id="dash-tabla"><tr><td colspan="7" class="loading-cell">Haz clic en Actualizar</td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROGRAMACI N -->
+    <div class="panel" id="p-programacion">
+      <div class="page-title">Programacion</div>
+      <div class="page-sub">Pega el mensaje de WhatsApp y procesalo</div>
+      <div class="estado-bar" id="prog-estado"><div class="dot"></div>Listo</div>
+      <div class="card">
+        <div class="card-title">Mensaje de WhatsApp</div>
+        <textarea id="prog-texto" style="width:100%;min-height:200px;font-family:monospace;font-size:12px" placeholder="Pega aqui el mensaje de programacion..." oninput="var v=this.value.trim()!=='';document.getElementById('btn-guardar-prog').disabled=!v;document.getElementById('btn-proc-prog').disabled=!v;"></textarea>
+        <div class="btn-row" style="margin-top:12px;margin-bottom:0">
+          <button id="btn-guardar-prog" class="btn btn-primary" onclick="guardarYProcesar()" disabled><svg viewBox="0 0 24 24" stroke-width="2"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>Guardar y Procesar</button>
+          <button class="btn" onclick="cargarProgRaw()"><svg viewBox="0 0 24 24" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>Cargar actual</button>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="card-title">Editar programacion por dia</div>
+        <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:16px">
+          <div class="form-field">
+            <label>Selecciona el dia</label>
+            <input type="date" id="prog-fecha-filtro" style="height:36px">
+          </div>
+          <button class="btn btn-primary" onclick="cargarProgDia()">Ver programacion</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nombre</th><th>Lugar</th><th>H.Inicio</th><th>H.Fin</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="prog-dia-tabla"><tr><td colspan="6" class="loading-cell">Selecciona un dia</td></tr></tbody>
+          </table>
+        </div>
+        <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:16px">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--text3);margin-bottom:10px">Agregar trabajador al dia seleccionado</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:8px;align-items:flex-end">
+            <div class="form-field">
+              <label>Trabajador</label>
+              <select id="prog-add-nombre" style="height:34px;width:100%"><option value="">Selecciona...</option></select>
+            </div>
+            <div class="form-field">
+              <label>Lugar</label>
+              <select id="prog-add-lugar" style="height:34px;width:100%"><option value="">Selecciona...</option></select>
+            </div>
+            <div class="form-field">
+              <label>H. Inicio</label>
+              <input type="text" id="prog-add-inicio" placeholder="08:00" style="height:34px;width:100%;font-family:monospace">
+            </div>
+            <div class="form-field">
+              <label>H. Fin</label>
+              <input type="text" id="prog-add-fin" placeholder="17:00" style="height:34px;width:100%;font-family:monospace">
+            </div>
+            <button class="btn btn-green" onclick="agregarProgDia()" style="height:34px">+ Agregar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ASISTENCIA FINAL -->
+    <div class="panel" id="p-asistencia">
+      <div class="page-title">Asistencia Final</div>
+      <div class="page-sub">Resultado del cruce de programacion + marcaciones</div>
+      <div class="btn-row no-print">
+        <button class="btn btn-primary" onclick="cargarAsistencia()"><svg viewBox="0 0 24 24" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>Cargar</button>
+        <button class="btn" onclick="window.print()"><svg viewBox="0 0 24 24" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimir</button>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table><thead><tr><th>#</th><th>Nombre</th><th>Lugar</th><th>Fecha</th><th>H.Prog</th><th>Entrada</th><th>Salida</th><th>Estado</th></tr></thead>
+          <tbody id="asist-tabla"><tr><td colspan="8" class="loading-cell">Carga los datos</td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORTE MENSUAL -->
+    <div class="panel" id="p-mensual">
+      <div class="page-title">Reporte Mensual</div>
+      <div class="page-sub">Vista calendario por trabajador</div>
+      <div class="btn-row no-print">
+        <button class="btn btn-primary" onclick="cargarMensual()">Cargar reporte</button>
+        <button class="btn btn-green" onclick="descargarExcel('generarExcelMensual',this)">Descargar Excel</button>
+        <button class="btn" onclick="window.print()">Imprimir</button>
+      </div>
+      <div class="card" style="padding:12px">
+        <div class="rep-wrap" id="mensual-contenido"><div class="loading-cell">Carga el reporte</div></div>
+      </div>
+    </div>
+
+    <!-- REPORTE IMPRIMIR -->
+    <div class="panel" id="p-imprimir">
+      <div class="page-title">Reporte para Firmas</div>
+      <div class="page-sub">Reporte final para impresion y firma</div>
+      <div class="btn-row no-print">
+        <button class="btn btn-primary" onclick="cargarImprimir()">Cargar reporte</button>
+        <button class="btn btn-green" id="btn-excel-firmas" onclick="descargarExcel('generarExcelFirmas',this)">Descargar Excel</button>
+        <button class="btn" onclick="window.print()">Imprimir</button>
+      </div>
+      <div class="card" style="padding:12px">
+        <div class="rep-wrap" id="imprimir-contenido"><div class="loading-cell">Carga el reporte</div></div>
+      </div>
+    </div>
+
+    <!-- CONSULTA -->
+    <div class="panel" id="p-consulta">
+      <div class="page-title">Consulta por Trabajador</div>
+      <div class="page-sub">Historial de asistencia individual con fotos</div>
+      <div class="card">
+        <div class="card-title">Filtros</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+          <div class="form-field"><label>Trabajador</label><select id="con-trab" style="min-width:220px"><option value="">Todos</option></select></div>
+          <div class="form-field"><label>Fecha (opcional)</label><input type="date" id="con-fecha"></div>
+          <button class="btn btn-primary" onclick="cargarConsulta()">Consultar</button>
+        </div>
+      </div>
+      <div id="con-stats-wrap" style="display:none;margin-bottom:16px">
+        <div id="con-stats-grid" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table><thead><tr><th>Nombre</th><th>Lugar</th><th>Fecha</th><th>Horario</th><th>Entrada</th><th>Salida</th><th>Estado</th></tr></thead>
+          <tbody id="con-tabla"><tr><td colspan="7" class="loading-cell">Selecciona y consulta</td></tr></tbody></table>
+        </div>
+      </div>
+      <div id="con-detalle"></div>
+    </div>
+
+    <!-- PROCESOS -->
+    <div class="panel" id="p-procesos">
+      <div class="page-title">Ejecutar Procesos</div>
+      <div class="page-sub">Ejecuta los procesos del sistema en orden</div>
+      <div class="estado-bar" id="proc-estado"><div class="dot"></div>Listo</div>
+      <div class="card">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:var(--bg3);border-radius:var(--r-sm);border:1px solid var(--border)">
+            <div><div style="font-size:13px;font-weight:500">1. Procesar Programacion</div><div style="font-size:11px;color:var(--text3)">Interpreta el mensaje de WhatsApp</div></div>
+            <button id="btn-proc-prog" class="btn btn-primary" onclick="ejecutar('procesarProgramacion','proc-estado')" disabled>Ejecutar</button>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:var(--bg3);border-radius:var(--r-sm);border:1px solid var(--border)">
+            <div><div style="font-size:13px;font-weight:500">2. Unificar Marcaciones</div><div style="font-size:11px;color:var(--text3)">Combina foto + biometrico</div></div>
+            <button class="btn btn-primary" onclick="ejecutar('unificarMarcaciones','proc-estado')">Ejecutar</button>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:var(--bg3);border-radius:var(--r-sm);border:1px solid var(--border)">
+            <div><div style="font-size:13px;font-weight:500">3. Generar Asistencia Final</div><div style="font-size:11px;color:var(--text3)">Cruza programacion con marcaciones</div></div>
+            <button class="btn btn-primary" onclick="ejecutar('generarAsistenciaFinal','proc-estado')">Ejecutar</button>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:var(--bg3);border-radius:var(--r-sm);border:1px solid var(--border)">
+            <div><div style="font-size:13px;font-weight:500">4. Generar Reporte Mensual</div><div style="font-size:11px;color:var(--text3)">Genera hoja REPORTE_MENSUAL</div></div>
+            <button class="btn btn-primary" onclick="ejecutar('generarReporteMensual','proc-estado')">Ejecutar</button>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:var(--bg3);border-radius:var(--r-sm);border:1px solid var(--border)">
+            <div><div style="font-size:13px;font-weight:500">5. Generar Reporte para Imprimir</div><div style="font-size:11px;color:var(--text3)">Genera hoja REPORTE_IMPRIMIR</div></div>
+            <button class="btn btn-primary" onclick="ejecutar('generarReporteImprimir','proc-estado')">Ejecutar</button>
+          </div>
+          <button class="btn btn-green" style="height:44px;font-size:14px" onclick="ejecutarTodo()">  Ejecutar Todo en Secuencia</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- REGISTRO MANUAL -->
+    <div class="panel" id="p-regmanual">
+      <div class="page-header">
+        <div class="page-title">Registro Manual</div>
+        <div class="page-sub">Subsanar marcaciones olvidadas o no registradas</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Nuevo registro manual</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="form-field">
+            <label>Trabajador</label>
+            <select id="rm-trabajador" style="height:36px;width:100%"><option value="">Cargando...</option></select>
+          </div>
+          <div class="form-field">
+            <label>Lugar</label>
+            <select id="rm-lugar" style="height:36px;width:100%"><option value="">Cargando...</option></select>
+          </div>
+          <div class="form-field">
+            <label>Fecha</label>
+            <input type="date" id="rm-fecha" style="height:36px;width:100%">
+          </div>
+          <div class="form-field">
+            <label>Hora</label>
+            <input type="time" id="rm-hora" style="height:36px;width:100%">
+          </div>
+          <div class="form-field">
+            <label>Tipo</label>
+            <select id="rm-tipo" style="height:36px;width:100%">
+              <option value="Inicio de turno">Inicio de turno</option>
+              <option value="Fin de turno">Fin de turno</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Observacion</label>
+            <input type="text" id="rm-obs" placeholder="Motivo del registro manual" style="height:36px;width:100%">
+          </div>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:10px;align-items:center">
+          <button class="btn btn-primary" onclick="guardarRegistroManual()">Guardar Registro</button>
+          <span id="rm-estado" style="font-size:13px"></span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Registros manuales del mes</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Trabajador</th><th>Lugar</th><th>Fecha</th><th>Hora</th><th>Tipo</th><th>Observacion</th><th>Accion</th></tr></thead>
+            <tbody id="rm-tabla"><tr><td colspan="7" class="loading-cell">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PERSONAL -->
+    <div class="panel" id="p-personal">
+      <div class="page-title">Gestion de Personal</div>
+      <div class="page-sub">Administra trabajadores, lugares y PINs del sistema</div>
+      <div class="card">
+        <div class="card-title">Agregar nuevo trabajador</div>
+        <div class="form-grid">
+          <div class="form-field"><label>Nombre sistema (corto)</label><input type="text" id="per-sistema" placeholder="Ej: Abner"></div>
+          <div class="form-field"><label>Nombre completo</label><input type="text" id="per-completo" placeholder="Ej: Abner Leon Pichen"></div>
+          <div class="form-field"><label>DNI</label><input type="text" id="per-dni" placeholder="Ej: 42563290"></div>
+          <div class="form-field"><label>Cargo</label><input type="text" id="per-cargo" placeholder="Ej: Inspector"></div>
+        </div>
+        <button class="btn btn-green" style="margin-top:12px" onclick="agregarPersonal()">+ Agregar trabajador</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Lista de personal</div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Nombre sistema</th><th>Nombre completo</th><th>DNI</th><th>Cargo</th><th>Accion</th></tr></thead>
+          <tbody id="per-tabla"><tr><td colspan="5" class="loading-cell">Cargando...</td></tr></tbody></table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Agregar lugar de servicio</div>
+        <div style="display:flex;gap:10px;align-items:flex-end">
+          <div class="form-field" style="flex:1"><label>Nombre del lugar</label><input type="text" id="lug-nuevo" placeholder="Ej: Chicama" style="width:100%"></div>
+          <button class="btn btn-green" onclick="agregarLugarPanel()">+ Agregar</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Lista de lugares</div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Lugar</th><th>Accion</th></tr></thead>
+          <tbody id="lug-tabla"><tr><td colspan="2" class="loading-cell">Cargando...</td></tr></tbody></table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">PIN de acceso</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:12px">PIN para ingresar al formulario de registro de fotos</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="password" id="pin-acceso-new" placeholder="Nuevo PIN" maxlength="10" style="width:150px;font-family:monospace">
+          <button class="btn btn-primary" onclick="cambiarPinAcceso()">Cambiar PIN</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BIOM TRICO -->
+    <div class="panel" id="p-biometrico">
+      <div class="page-title">Registros Biometricos</div>
+      <div class="page-sub">Cargar marcaciones del sistema biometrico</div>
+      <div class="card">
+        <div class="card-title">Agregar marcacion individual</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+          <div class="form-field"><label>Trabajador</label><select id="bio-nombre" style="min-width:200px"><option value="">Selecciona...</option></select></div>
+          <div class="form-field"><label>Fecha</label><input type="date" id="bio-fecha"></div>
+          <div class="form-field"><label>Hora</label><input type="time" id="bio-hora"></div>
+          <div class="form-field"><label>Tipo</label><select id="bio-tipo"><option value="">Sin especificar</option><option>Entrada</option><option>Salida</option></select></div>
+          <button class="btn btn-green" onclick="agregarBiometrico()">+ Agregar</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Carga masiva desde Excel</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:8px">Copia y pega desde Excel: columnas Nombre | Fecha | Hora (una fila por l nea, separado por TAB)</div>
+        <textarea id="bio-masivo" style="width:100%;height:100px;font-family:monospace;font-size:11px" placeholder="18098607&#9;Joe Tejada Rios&#9;1/04/2026 07:00:59&#9;Entrada"></textarea>
+        <button class="btn btn-primary" style="margin-top:8px" onclick="cargarBiometricoMasivo()">Cargar desde pegado</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Registros cargados</div>
+        <div class="btn-row"><button class="btn btn-primary" onclick="cargarTablaBio()">Actualizar lista</button></div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Fila</th><th>DNI</th><th>Nombre</th><th>Fecha</th><th>Hora</th><th>Tipo</th><th>Accion</th></tr></thead>
+          <tbody id="bio-tabla"><tr><td colspan="7" class="loading-cell">Haz clic en Actualizar</td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+      </div>
+</div>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyTQiXr_fNbitqxiolm4b-3srL9meq0Vw_jJOd41jxwBfvj9KQ1zGBZ5wD8LNIDSZTH/exec";
+const MESES = ["","Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+let personalData = [];
+let progData = [];
+
+// NAV
+function nav(id, el) {
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.nav-item').forEach(function(i){i.classList.remove('active');});
+  document.getElementById('p-' + id).classList.add('active');
+  el.classList.add('active');
+  if (id === 'personal') { cargarTablaPersonal(); cargarTablaLugares(); }
+  if (id === 'regmanual') cargarRegistroManual();
+  if (id === 'biometrico') cargarTablaBio();
+  if (id === 'programacion') {
+    // Cargar estados desde LEYENDA
+    fetchJSON(SCRIPT_URL + '?accion=listarEstados').then(function(data) {
+      if (data.estados && data.estados.length > 0) {
+        window._estadosCache = ['PROGRAMADO','REVISION'].concat(data.estados);
+      }
+    });
+    // Cargar selects de agregar trabajador por dia
+    fetchJSON(SCRIPT_URL + '?accion=listarPersonal').then(function(data) {
+      var sel = document.getElementById('prog-add-nombre');
+      if (sel) {
+        sel.innerHTML = '<option value="">Selecciona...</option>';
+        (data.personal||[]).forEach(function(p) {
+          var op = document.createElement('option');
+          op.value = p.nombre_sistema; op.textContent = p.nombre_sistema;
+          sel.appendChild(op);
+        });
+      }
+    });
+    fetchJSON(SCRIPT_URL + '?accion=listarLugares').then(function(data) {
+      var sel = document.getElementById('prog-add-lugar');
+      if (sel) {
+        sel.innerHTML = '<option value="">Sin lugar</option>';
+        (data.lugares||[]).forEach(function(l) {
+          var op = document.createElement('option');
+          op.value = l; op.textContent = l;
+          sel.appendChild(op);
+        });
+      }
+    });
+  }
+  if (id === 'editprog') {
+    // Cargar lugares al cache y poblar select del formulario
+    fetchJSON(SCRIPT_URL + '?accion=listarLugares').then(function(data) {
+      window._lugaresCache = data.lugares || [];
+      var sel = document.getElementById('ep-lugar');
+      if (sel) {
+        sel.innerHTML = '<option value="">Sin lugar</option>';
+        (data.lugares||[]).forEach(function(l){
+          var op = document.createElement('option');
+          op.value = l; op.textContent = l;
+          sel.appendChild(op);
+        });
+      }
+    });
+  }
+}
+
+// JSONP fetch
+function fetchJSON(url) {
+  return new Promise(function(resolve, reject) {
+    var cbName = 'cb' + Date.now() + Math.floor(Math.random()*9999);
+    window[cbName] = function(data) {
+      delete window[cbName];
+      var s = document.getElementById('s_' + cbName);
+      if (s) s.remove();
+      resolve(data);
+    };
+    var sep = url.indexOf('?') >= 0 ? '&' : '?';
+    var s = document.createElement('script');
+    s.id = 's_' + cbName;
+    s.src = url + sep + 'callback=' + cbName;
+    s.onerror = function() {
+      delete window[cbName];
+      s.remove();
+      reject(new Error('Error de conexion'));
+    };
+    document.body.appendChild(s);
+  });
+}
+
+function getMes() { return document.getElementById('g-mes').value; }
+function getAnio() { return document.getElementById('g-anio').value; }
+
+function badge(nom) {
+  if (!nom) return '<span style="color:var(--text3)"> </span>';
+  return '<span class="badge b-' + nom + '">' + nom + '</span>';
+}
+
+function setEstado(id, tipo, msg) {
+  var el = document.getElementById(id);
+  var dot = tipo === 'ok' ? 'ok' : tipo === 'err' ? 'err' : 'loading';
+  el.innerHTML = '<div class="dot ' + dot + '"></div>' + msg;
+}
+
+// RELOJ
+function actualizarReloj() {
+  var now = new Date();
+  document.getElementById('reloj').textContent =
+    String(now.getHours()).padStart(2,'0') + ':' +
+    String(now.getMinutes()).padStart(2,'0') + ':' +
+    String(now.getSeconds()).padStart(2,'0') + '   ' +
+    now.toLocaleDateString('es-PE',{weekday:'short',day:'numeric',month:'short'});
+}
+setInterval(actualizarReloj, 1000);
+actualizarReloj();
+
+// INIT
+window.onload = function() {
+  var now = new Date();
+  document.getElementById('g-mes').value = now.getMonth() + 1;
+  document.getElementById('g-anio').value = now.getFullYear();
+  cargarPersonal();
+};
+
+// PERSONAL BASE
+function cargarPersonal() {
+  fetchJSON(SCRIPT_URL + '?accion=listarPersonal').then(function(data) {
+    personalData = data.personal || [];
+    poblarSelectores(personalData);
+  }).catch(function(){});
+}
+
+function poblarSelectores(rows) {
+  ['con-trab','bio-nombre','ep-nombre'].forEach(function(id) {
+    var sel = document.getElementById(id);
+    if (!sel) return;
+    var val = sel.value;
+    sel.innerHTML = '<option value="">Selecciona...</option>';
+    rows.forEach(function(p) {
+      var op = document.createElement('option');
+      op.value = p.nombre_sistema;
+      op.textContent = p.nombre_sistema;
+      sel.appendChild(op);
+    });
+    if (val) sel.value = val;
+  });
+}
+
+// DASHBOARD
+function cargarDashboard() {
+  var mes = getMes(), anio = getAnio();
+  fetchJSON(SCRIPT_URL + '?accion=dashboard&mes=' + mes + '&anio=' + anio).then(function(data) {
+    var s = data.stats || {};
+    document.getElementById('s-personal').textContent = s.personal || ' ';
+    document.getElementById('s-asist').textContent = s.asistencias || '0';
+    document.getElementById('s-faltas').textContent = s.faltas || '0';
+    document.getElementById('s-foto').textContent = s.registros_foto || '0';
+    document.getElementById('s-bio').textContent = s.registros_bio || '0';
+    document.getElementById('s-ds').textContent = s.descansos || '0';
+  }).catch(function(e) { console.error(e); });
+
+  fetchJSON(SCRIPT_URL + '?accion=leerAsistencia&mes=' + mes + '&anio=' + anio).then(function(data) {
+    var rows = (data.asistencia || []).slice(-20).reverse();
+    document.getElementById('dash-tabla').innerHTML = rows.length === 0
+      ? '<tr><td colspan="7" class="loading-cell">Sin datos este mes</td></tr>'
+      : rows.map(function(r) {
+          return '<tr><td>' + r.nombre + '</td><td>' + (r.lugar||' ') + '</td>' +
+            '<td class="mono">' + r.fecha + '</td>' +
+            '<td class="mono">' + (r.hora_inicio||'') + (r.hora_fin?' - '+r.hora_fin:'') + '</td>' +
+            '<td class="mono" style="color:var(--green)">' + (r.entrada||' ') + '</td>' +
+            '<td class="mono" style="color:var(--red)">' + (r.salida||' ') + '</td>' +
+            '<td>' + badge(r.estado) + '</td></tr>';
+        }).join('');
+  }).catch(function(e) {
+    document.getElementById('dash-tabla').innerHTML = '<tr><td colspan="7" class="loading-cell" style="color:var(--red)">Error: ' + e.message + '</td></tr>';
+  });
+}
+
+// PROGRAMACI N
+function cargarProgRaw() {
+  document.getElementById('btn-guardar-prog').disabled = true;
+  fetchJSON(SCRIPT_URL + '?accion=leerProgramacionRaw').then(function(data) {
+    document.getElementById('prog-texto').value = data.texto || '';
+    setEstado('prog-estado','ok','Programacion cargada');
+  }).catch(function(e) { setEstado('prog-estado','err','Error: ' + e.message); });
+}
+
+function guardarYProcesar() {
+  var texto = document.getElementById('prog-texto').value.trim();
+  if (!texto) { alert('Pega el mensaje primero'); return; }
+  setEstado('prog-estado','loading','Guardando...');
+  fetchJSON(SCRIPT_URL + '?accion=guardarProgramacionRaw&texto=' + encodeURIComponent(texto)).then(function() {
+    setEstado('prog-estado','loading','Procesando...');
+    return fetchJSON(SCRIPT_URL + '?accion=procesarProgramacion');
+  }).then(function() {
+    setEstado('prog-estado','ok','  Programacion procesada correctamente');
+  }).catch(function(e) { setEstado('prog-estado','err','Error: ' + e.message); });
+}
+
+// ASISTENCIA FINAL
+function cargarAsistencia() {
+  var mes = getMes(), anio = getAnio();
+  document.getElementById('asist-tabla').innerHTML = '<tr><td colspan="8" class="loading-cell">Cargando...</td></tr>';
+  fetchJSON(SCRIPT_URL + '?accion=leerAsistencia&mes=' + mes + '&anio=' + anio).then(function(data) {
+    var rows = data.asistencia || [];
+    document.getElementById('asist-tabla').innerHTML = rows.length === 0
+      ? '<tr><td colspan="8" class="loading-cell">Sin datos para ' + MESES[mes] + ' ' + anio + '</td></tr>'
+      : rows.map(function(r,i) {
+          return '<tr><td class="mono" style="color:var(--text3)">' + (i+1) + '</td>' +
+            '<td>' + r.nombre + '</td><td>' + (r.lugar||' ') + '</td>' +
+            '<td class="mono">' + r.fecha + '</td>' +
+            '<td class="mono">' + (r.hora_inicio||'') + (r.hora_fin?' - '+r.hora_fin:'') + '</td>' +
+            '<td class="mono" style="color:var(--green)">' + (r.entrada||' ') + '</td>' +
+            '<td class="mono" style="color:var(--red)">' + (r.salida||' ') + '</td>' +
+            '<td>' + badge(r.estado) + '</td></tr>';
+        }).join('');
+  }).catch(function(e) {
+    document.getElementById('asist-tabla').innerHTML = '<tr><td colspan="8" class="loading-cell" style="color:var(--red)">Error: ' + e.message + '</td></tr>';
+  });
+}
+
+// REPORTE MENSUAL
+function cargarMensual() {
+  document.getElementById('mensual-contenido').innerHTML = '<div class="loading-cell">Cargando...</div>';
+  fetchJSON(SCRIPT_URL + '?accion=leerReporteMensual').then(function(data) {
+    var rows = data.reporte || [];
+    if (rows.length === 0) { document.getElementById('mensual-contenido').innerHTML = '<div class="loading-cell">Sin datos</div>'; return; }
+    var html = '<table class="rep-table"><thead><tr><th class="lname">APELLIDOS Y NOMBRES</th>';
+    for (var d=1;d<=31;d++) html += '<th>' + d + '</th>';
+    html += '<th>F</th><th>T</th><th>A</th><th>D AS</th></tr></thead><tbody>';
+    rows.forEach(function(r) {
+      html += '<tr><td class="lname">' + r['NOMBRE'] + '</td>';
+      for (var d=1;d<=31;d++) {
+        var v = r[String(d)] || '';
+        var bg = v==='F'?'background:rgba(239,68,68,0.15)':v==='DS'?'background:rgba(79,142,247,0.1)':v==='CP'?'background:rgba(245,158,11,0.1)':'';
+        html += '<td style="' + bg + '">' + (v ? badge(v) : '') + '</td>';
+      }
+      html += '<td class="mono" style="color:var(--red)">' + (r['TOTAL F']||'') + '</td>';
+      html += '<td class="mono" style="color:var(--yellow)">' + (r['TOTAL T']||'') + '</td>';
+      html += '<td class="mono" style="color:var(--green)">' + (r['TOTAL A']||'') + '</td>';
+      html += '<td class="mono" style="color:var(--blue)">' + (r['TOTAL DIAS']||'') + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById('mensual-contenido').innerHTML = html;
+  }).catch(function(e) {
+    document.getElementById('mensual-contenido').innerHTML = '<div class="loading-cell" style="color:var(--red)">Error: ' + e.message + '</div>';
+  });
+}
+
+// REPORTE IMPRIMIR
+function cargarImprimir() {
+  document.getElementById('imprimir-contenido').innerHTML = '<div class="loading-cell">Cargando...</div>';
+  fetchJSON(SCRIPT_URL + '?accion=leerReporteImprimir').then(function(data) {
+    var rows = data.reporte || [];
+    if (rows.length === 0) { document.getElementById('imprimir-contenido').innerHTML = '<div class="loading-cell">Sin datos</div>'; return; }
+    var html = '<table class="rep-table"><thead><tr><th>DNI</th><th class="lname">APELLIDOS Y NOMBRES</th><th>CARGO</th>';
+    for (var d=1;d<=31;d++) html += '<th>' + d + '</th>';
+    html += '<th>D AS</th><th style="min-width:80px">FIRMA</th></tr></thead><tbody>';
+    rows.forEach(function(r) {
+      html += '<tr><td class="mono" style="font-size:10px">' + (r['DNI']||'') + '</td>';
+      html += '<td class="lname" style="font-weight:500">' + (r['NOMBRE']||'') + '</td>';
+      html += '<td style="font-size:11px;color:var(--text2)">' + (r['CARGO']||'') + '</td>';
+      for (var d=1;d<=31;d++) {
+        var v = r[String(d)] || '';
+        var bg = v==='F'?'background:rgba(239,68,68,0.15)':v==='DS'?'background:rgba(79,142,247,0.1)':v==='CP'?'background:rgba(245,158,11,0.1)':'';
+        html += '<td style="' + bg + '">' + (v ? badge(v) : '') + '</td>';
+      }
+      html += '<td class="mono" style="color:var(--blue)">' + (r['DIAS TRABAJADOS']||'') + '</td>';
+      html += '<td></td></tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById('imprimir-contenido').innerHTML = html;
+  }).catch(function(e) {
+    document.getElementById('imprimir-contenido').innerHTML = '<div class="loading-cell" style="color:var(--red)">Error: ' + e.message + '</div>';
+  });
+}
+
+// CONSULTA
+function cargarConsulta() {
+  var nombre = document.getElementById('con-trab').value;
+  var fechaInput = document.getElementById('con-fecha').value;
+  var fecha = '';
+  if (fechaInput) {
+    var d = new Date(fechaInput + 'T00:00:00');
+    fecha = String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
+  }
+  document.getElementById('con-tabla').innerHTML = '<tr><td colspan="7" class="loading-cell">Cargando...</td></tr>';
+  document.getElementById('con-stats-wrap').style.display = 'none';
+  document.getElementById('con-detalle').innerHTML = '';
+  var url = SCRIPT_URL + '?accion=consultarTrabajador';
+  if (nombre) url += '&nombre=' + encodeURIComponent(nombre);
+  if (fecha) url += '&fecha=' + encodeURIComponent(fecha);
+  fetchJSON(url).then(function(data) {
+    var rows = data.resultado || [];
+    if (nombre && rows.length > 0) {
+      var cntA=0,cntF=0,cntDS=0,cntO=0;
+      rows.forEach(function(r) {
+        if(r.estado==='A')cntA++; else if(r.estado==='F')cntF++; else if(r.estado==='DS')cntDS++; else if(r.estado)cntO++;
+      });
+      document.getElementById('con-stats-wrap').style.display = 'block';
+      document.getElementById('con-stats-grid').innerHTML =
+        '<div style="background:rgba(34,197,94,0.1);border:1px solid var(--green);border-radius:6px;padding:6px 14px;display:flex;align-items:center;gap:8px"><span style="font-family:monospace;font-size:18px;font-weight:700;color:var(--green)">' + cntA + '</span><span style="font-size:11px;color:var(--text3)">Asistencias</span></div>' +
+        '<div style="background:rgba(239,68,68,0.1);border:1px solid var(--red);border-radius:6px;padding:6px 14px;display:flex;align-items:center;gap:8px"><span style="font-family:monospace;font-size:18px;font-weight:700;color:var(--red)">' + cntF + '</span><span style="font-size:11px;color:var(--text3)">Faltas</span></div>' +
+        '<div style="background:rgba(79,142,247,0.1);border:1px solid var(--blue);border-radius:6px;padding:6px 14px;display:flex;align-items:center;gap:8px"><span style="font-family:monospace;font-size:18px;font-weight:700;color:var(--blue)">' + cntDS + '</span><span style="font-size:11px;color:var(--text3)">Descansos</span></div>' +
+        '<div style="background:rgba(245,158,11,0.1);border:1px solid var(--yellow);border-radius:6px;padding:6px 14px;display:flex;align-items:center;gap:8px"><span style="font-family:monospace;font-size:18px;font-weight:700;color:var(--yellow)">' + cntO + '</span><span style="font-size:11px;color:var(--text3)">Otros</span></div>';
+    }
+    document.getElementById('con-tabla').innerHTML = rows.length === 0
+      ? '<tr><td colspan="7" class="loading-cell">Sin resultados</td></tr>'
+      : rows.map(function(r) {
+          return '<tr><td>' + r.nombre + '</td><td>' + (r.lugar||' ') + '</td>' +
+            '<td class="mono">' + r.fecha + '</td>' +
+            '<td class="mono">' + (r.hora_inicio||'') + (r.hora_fin?' - '+r.hora_fin:'') + '</td>' +
+            '<td class="mono" style="color:var(--green)">' + (r.entrada||' ') + '</td>' +
+            '<td class="mono" style="color:var(--red)">' + (r.salida||' ') + '</td>' +
+            '<td>' + badge(r.estado) + '</td></tr>';
+        }).join('');
+    // Mostrar fotos
+    var detalle = '';
+    rows.forEach(function(r) {
+      var fotos = r.fotos || [];
+      var bios = r.biometrico || [];
+      if (fotos.length === 0 && bios.length === 0) return;
+      detalle += '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-top:12px">';
+      detalle += '<div style="font-size:13px;font-weight:600;margin-bottom:12px">' + r.nombre + '   ' + r.fecha + ' ' + badge(r.estado) + '</div>';
+      if (fotos.length > 0) {
+        detalle += '<div style="font-size:10px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">  Marcaciones por foto</div>';
+        detalle += '<div style="display:flex;gap:12px;flex-wrap:wrap">';
+        fotos.forEach(function(f) {
+          detalle += '<div style="text-align:center">';
+          var fileId = f.url && f.url.match(/\/d\/([^/]+)/);
+          if (fileId) {
+            var thumb = 'https://drive.google.com/thumbnail?id=' + fileId[1] + '&sz=w200';
+            detalle += '<a href="' + f.url + '" target="_blank">';
+            detalle += '<img src="' + thumb + '" style="width:120px;height:120px;object-fit:cover;border-radius:6px;border:1px solid var(--border)" onerror="this.parentNode.style.display=\'none\'">';
+            detalle += '</a>';
+          }
+          detalle += '<div class="mono" style="font-size:11px;color:var(--green);margin-top:4px">' + (f.hora||'') + '</div>';
+          detalle += '<div style="font-size:10px;color:var(--text3)">' + (f.tipo||'') + '   ' + (f.lugar||'') + '</div>';
+          detalle += '</div>';
+        });
+        detalle += '</div>';
+      }
+      if (bios.length > 0) {
+        detalle += '<div style="font-size:10px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin:12px 0 8px">  Marcaciones biometrico</div>';
+        detalle += '<div style="display:flex;gap:8px;flex-wrap:wrap">';
+        bios.forEach(function(b) {
+          detalle += '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px 14px;text-align:center">';
+          detalle += '<div class="mono" style="font-size:14px;color:var(--blue)">' + (b.hora||'') + '</div>';
+          detalle += '<div style="font-size:10px;color:var(--text3);margin-top:2px">' + (b.tipo||'Biometrico') + '</div>';
+          detalle += '</div>';
+        });
+        detalle += '</div>';
+      }
+      detalle += '</div>';
+    });
+    document.getElementById('con-detalle').innerHTML = detalle;
+  }).catch(function(e) {
+    document.getElementById('con-tabla').innerHTML = '<tr><td colspan="7" class="loading-cell" style="color:var(--red)">Error: ' + e.message + '</td></tr>';
+  });
+}
+
+// PROCESOS
+function ejecutar(accion, estadoId) {
+  var mes = document.getElementById('g-mes').value;
+  var anio = document.getElementById('g-anio').value;
+  var url = SCRIPT_URL + '?accion=' + accion + '&mes=' + mes + '&anio=' + anio;
+  setEstado(estadoId, 'loading', 'Ejecutando ' + accion + ' (' + mes + '/' + anio + ')...');
+  fetchJSON(url).then(function(data) {
+    if (data.status === 'ok') setEstado(estadoId, 'ok', 'OK ' + (data.message || 'Completado'));
+    else setEstado(estadoId, 'err', 'Error: ' + (data.message || 'Error'));
+  }).catch(function(e) { setEstado(estadoId, 'err', 'Error: ' + e.message); });
+}
+
+function ejecutarTodo() {
+  var pasos = ['unificarMarcaciones','generarAsistenciaFinal','generarReporteMensual','generarReporteImprimir'];
+  var i = 0;
+  function siguiente() {
+    if (i >= pasos.length) { setEstado('proc-estado','ok','  Todo completado'); return; }
+    var paso = pasos[i++];
+    setEstado('proc-estado','loading','Ejecutando ' + paso + ' (' + i + '/' + pasos.length + ')...');
+    fetchJSON(SCRIPT_URL + '?accion=' + paso).then(function() {
+      setTimeout(siguiente, 500);
+    }).catch(function(e) { setEstado('proc-estado','err','  Error en ' + paso + ': ' + e.message); });
+  }
+  siguiente();
+}
+
+// PINES
+function cambiarPinAcceso() {
+  var pin = document.getElementById('pin-acceso-new').value.trim();
+  if (!pin) { alert('Escribe el nuevo PIN'); return; }
+  fetchJSON(SCRIPT_URL + '?accion=cambiarPinAcceso&pin=' + encodeURIComponent(pin)).then(function(data) {
+    if (data.status === 'ok') { alert('PIN de acceso actualizado'); document.getElementById('pin-acceso-new').value = ''; }
+    else alert('Error: ' + data.message);
+  }).catch(function(e) { alert('Error: ' + e.message); });
+}
+
+function cambiarPinAdmin() {
+  var pin = document.getElementById('pin-admin-new').value.trim();
+  if (!pin) { alert('Escribe el nuevo PIN'); return; }
+  fetchJSON(SCRIPT_URL + '?accion=cambiarPin&nuevoPin=' + encodeURIComponent(pin)).then(function(data) {
+    if (data.status === 'ok') { alert('PIN admin actualizado'); document.getElementById('pin-admin-new').value = ''; }
+    else alert('Error: ' + data.message);
+  }).catch(function(e) { alert('Error: ' + e.message); });
+}
+
+// DESCARGAR EXCEL
+function descargarExcel(accion, btn) {
+  var mes = document.getElementById('g-mes').value;
+  var anio = document.getElementById('g-anio').value;
+  var btn = event.currentTarget;
+  btn.textContent = 'Generando...';
+  btn.disabled = true;
+  fetchJSON(SCRIPT_URL + '?accion=' + accion + '&mes=' + mes + '&anio=' + anio).then(function(data) {
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" stroke-width="2" style="width:14px;height:14px;stroke:white;fill:none;display:inline-block;vertical-align:middle;margin-right:4px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Descargar Excel';
+    if (data.status === 'ok' && data.url) {
+      window.open(data.url, '_blank');
+    } else {
+      alert('Error al generar el archivo');
+    }
+  }).catch(function(e) {
+    btn.disabled = false;
+    btn.innerHTML = 'Descargar Excel';
+    alert('Error: ' + e.message);
+  });
+}
+
+// PROGRAMACION POR DIA
+function agregarProgDia() {
+  var fecha = document.getElementById('prog-fecha-filtro').value;
+  if (!fecha) { alert('Primero selecciona un dia'); return; }
+  var fp = fecha.split('-');
+  var fechaFmt = fp[2] + '/' + fp[1] + '/' + fp[0];
+  var nombre = document.getElementById('prog-add-nombre').value;
+  var lugar = document.getElementById('prog-add-lugar').value;
+  var inicio = document.getElementById('prog-add-inicio').value;
+  var fin = document.getElementById('prog-add-fin').value;
+  if (!nombre) { alert('Selecciona un trabajador'); return; }
+  fetchJSON(SCRIPT_URL + '?accion=agregarProgramacion&fecha=' + encodeURIComponent(fechaFmt) +
+    '&nombre=' + encodeURIComponent(nombre) +
+    '&lugar=' + encodeURIComponent(lugar) +
+    '&hora_inicio=' + encodeURIComponent(inicio) +
+    '&hora_fin=' + encodeURIComponent(fin) +
+    '&estado=PROGRAMADO'
+  ).then(function(data) {
+    if (data.status === 'ok') {
+      document.getElementById('prog-add-inicio').value = '';
+      document.getElementById('prog-add-fin').value = '';
+      cargarProgDia();
+    } else alert('Error: ' + data.message);
+  }).catch(function(e) { alert('Error: ' + e.message); });
+}
+
+function cargarProgDia() {
+  var fecha = document.getElementById('prog-fecha-filtro').value;
+  if (!fecha) { alert('Selecciona una fecha'); return; }
+  // Convertir de yyyy-mm-dd a dd/MM/yyyy
+  var parts = fecha.split('-');
+  var fechaFmt = parts[2] + '/' + parts[1] + '/' + parts[0];
+  document.getElementById('prog-dia-tabla').innerHTML = '<tr><td colspan="6" class="loading-cell">Cargando...</td></tr>';
+  var lugares = window._lugaresCache || [];
+  // Cargar lugares si no estan en cache
+  var lugaresPromise = lugares.length > 0 
+    ? Promise.resolve({lugares: lugares})
+    : fetchJSON(SCRIPT_URL + '?accion=listarLugares');
+  lugaresPromise.then(function(dataLug) {
+    window._lugaresCache = dataLug.lugares || [];
+    return fetchJSON(SCRIPT_URL + '?accion=leerProgramacion');
+  }).then(function(data) {
+    progData = data.programacion || [];
+    var rows = progData.filter(function(r) { return r.fecha === fechaFmt; });
+    var tbody = document.getElementById('prog-dia-tabla');
+    if (rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="loading-cell">Sin programacion para ' + fechaFmt + '</td></tr>';
+      return;
+    }
+    var ESTADOS = window._estadosCache || ['PROGRAMADO','DS','CP','REVISION','T','FE','FR','CO','CPSS','DM','LM','LP','LO','LUB','LS','V','C'];
+    var lug = window._lugaresCache || [];
+    tbody.innerHTML = '';
+    rows.forEach(function(r) {
+      var tr = document.createElement('tr');
+      if (r.estado === 'REVISION') tr.style.background = 'rgba(239,68,68,0.05)';
+      var optsEstado = ESTADOS.map(function(e){
+        return '<option value="'+e+'"'+(r.estado===e?' selected':'')+'>'+e+'</option>';
+      }).join('');
+      var optsLugar = '<option value="">Sin lugar</option>';
+      lug.forEach(function(l){
+        optsLugar += '<option value="'+l+'"'+(r.lugar===l?' selected':'')+'>'+l+'</option>';
+      });
+      if (r.lugar && lug.indexOf(r.lugar) === -1) optsLugar += '<option value="'+r.lugar+'" selected>'+r.lugar+'</option>';
+      tr.innerHTML =
+        '<td>'+r.nombre+'</td>'+
+        '<td><select id="dlug'+r.fila+'" style="height:32px;font-size:12px;width:130px">'+optsLugar+'</select></td>'+
+        '<td><input type="text" id="dini'+r.fila+'" value="'+(r.hora_inicio||'')+'" style="width:60px;height:32px;font-size:12px;font-family:monospace" placeholder="00:00"></td>'+
+        '<td><input type="text" id="dfin'+r.fila+'" value="'+(r.hora_fin||'')+'" style="width:60px;height:32px;font-size:12px;font-family:monospace" placeholder="00:00"></td>'+
+        '<td><select id="dest'+r.fila+'" style="height:32px;font-size:12px">'+optsEstado+'</select></td>'+
+        '<td style="display:flex;gap:4px;padding:4px"></td>';
+      var btnG = document.createElement('button');
+      btnG.className = 'btn btn-primary';
+      btnG.style.cssText = 'height:32px;font-size:11px';
+      btnG.textContent = 'Guardar';
+      btnG.onclick = function(){ guardarProgDia(r.fila, btnG); };
+      var btnE = document.createElement('button');
+      btnE.className = 'btn btn-red';
+      btnE.style.cssText = 'height:32px;font-size:11px';
+      btnE.textContent = 'Eliminar';
+      btnE.onclick = function(){ eliminarProgDia(r.fila); };
+      tr.lastElementChild.appendChild(btnG);
+      tr.lastElementChild.appendChild(btnE);
+      tbody.appendChild(tr);
+    });
+  }).catch(function(e) {
+    document.getElementById('prog-dia-tabla').innerHTML = '<tr><td colspan="6" class="loading-cell" style="color:var(--red)">Error: ' + e.message + '</td></tr>';
+  });
+}
+
+function guardarProgDia(fila, btn) {
+  var lugar = document.getElementById('dlug'+fila).value;
+  var ini = document.getElementById('dini'+fila).value;
+  var fin = document.getElementById('dfin'+fila).value;
+  var est = document.getElementById('dest'+fila).value;
+  fetchJSON(SCRIPT_URL + '?accion=editarProgramacion&fila=' + fila +
+    '&lugar=' + encodeURIComponent(lugar) + '&hora_inicio=' + encodeURIComponent(ini) +
+    '&hora_fin=' + encodeURIComponent(fin) + '&estado=' + encodeURIComponent(est))
+  .then(function(data) {
+    if (data.status === 'ok') {
+      btn.textContent = 'Guardado';
+      setTimeout(function(){btn.textContent='Guardar';}, 1500);
+    } else alert('Error: ' + data.message);
+  }).catch(function(e){ alert('Error: ' + e.message); });
+}
+
+function eliminarProgDia(fila) {
+  if (!confirm('Eliminar este registro?')) return;
+  fetchJSON(SCRIPT_URL + '?accion=eliminarProgramacion&fila=' + fila)
+  .then(function(data) {
+    if (data.status === 'ok') cargarProgDia();
+    else alert('Error: ' + data.message);
+  }).catch(function(e){ alert('Error: ' + e.message); });
+}
+
+// REGISTRO MANUAL
+function cargarRegistroManual() {
+  // Cargar trabajadores
+  fetchJSON(SCRIPT_URL + '?accion=listarPersonal').then(function(data) {
+    var sel = document.getElementById('rm-trabajador');
+    sel.innerHTML = '<option value="">Selecciona trabajador</option>';
+    (data.personal || []).forEach(function(p) {
+      var op = document.createElement('option');
+      op.value = p.nombre_sistema;
+      op.textContent = p.nombre_sistema;
+      sel.appendChild(op);
+    });
+  });
+  // Cargar lugares
+  fetchJSON(SCRIPT_URL + '?accion=listarLugares').then(function(data) {
+    var sel = document.getElementById('rm-lugar');
+    sel.innerHTML = '<option value="">Selecciona lugar</option>';
+    (data.lugares || []).forEach(function(l) {
+      var op = document.createElement('option');
+      op.value = l; op.textContent = l;
+      sel.appendChild(op);
+    });
+  });
+  // Fecha de hoy por defecto
+  var hoy = new Date();
+  var dd = String(hoy.getDate()).padStart(2,'0');
+  var mm = String(hoy.getMonth()+1).padStart(2,'0');
+  document.getElementById('rm-fecha').value = hoy.getFullYear()+'-'+mm+'-'+dd;
+  // Cargar tabla
+  cargarTablaRegistroManual();
+}
+
+function guardarRegistroManual() {
+  var trabajador = document.getElementById('rm-trabajador').value;
+  var lugar = document.getElementById('rm-lugar').value;
+  var fechaInput = document.getElementById('rm-fecha').value;
+  var hora = document.getElementById('rm-hora').value;
+  var tipo = document.getElementById('rm-tipo').value;
+  var obs = document.getElementById('rm-obs').value.trim();
+
+  if (!trabajador || !lugar || !fechaInput || !hora) {
+    alert('Completa todos los campos obligatorios');
+    return;
+  }
+
+  // Convertir fecha de yyyy-mm-dd a dd/MM/yyyy
+  var fp = fechaInput.split('-');
+  var fecha = fp[2] + '/' + fp[1] + '/' + fp[0];
+
+  var estado = document.getElementById('rm-estado');
+  estado.textContent = 'Guardando...';
+
+  fetchJSON(SCRIPT_URL + '?accion=registroManual' +
+    '&trabajador=' + encodeURIComponent(trabajador) +
+    '&lugar=' + encodeURIComponent(lugar) +
+    '&fecha=' + encodeURIComponent(fecha) +
+    '&hora=' + encodeURIComponent(hora) +
+    '&tipo=' + encodeURIComponent(tipo) +
+    '&obs=' + encodeURIComponent(obs)
+  ).then(function(data) {
+    if (data.status === 'ok') {
+      estado.textContent = 'Registro guardado correctamente';
+      estado.style.color = 'var(--green)';
+      setTimeout(function(){ estado.textContent = ''; }, 3000);
+      document.getElementById('rm-hora').value = '';
+      document.getElementById('rm-obs').value = '';
+      cargarTablaRegistroManual();
+    } else {
+      estado.textContent = 'Error: ' + data.message;
+      estado.style.color = 'var(--red)';
+    }
+  }).catch(function(e) {
+    estado.textContent = 'Error: ' + e.message;
+    estado.style.color = 'var(--red)';
+  });
+}
+
+function cargarTablaRegistroManual() {
+  var mes = document.getElementById('g-mes').value;
+  var anio = document.getElementById('g-anio').value;
+  var tbody = document.getElementById('rm-tabla');
+  tbody.innerHTML = '<tr><td colspan="7" class="loading-cell">Cargando...</td></tr>';
+  fetchJSON(SCRIPT_URL + '?accion=listarRegistroManual&mes=' + mes + '&anio=' + anio).then(function(data) {
+    var registros = data.registros || [];
+    if (registros.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="loading-cell">Sin registros manuales este mes</td></tr>';
+      return;
+    }
+    tbody.innerHTML = '';
+    registros.forEach(function(r) {
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>'+r.trabajador+'</td>'+
+        '<td>'+r.lugar+'</td>'+
+        '<td>'+r.fecha+'</td>'+
+        '<td>'+r.hora+'</td>'+
+        '<td>'+r.tipo+'</td>'+
+        '<td>'+r.obs+'</td>'+
+        '<td></td>';
+      var btn = document.createElement('button');
+      btn.className = 'btn btn-red';
+      btn.style.cssText = 'height:28px;font-size:11px';
+      btn.textContent = 'Eliminar';
+      btn.onclick = function(){ eliminarRegistroManual(r.fila); };
+      tr.lastElementChild.appendChild(btn);
+      tbody.appendChild(tr);
+    });
+  });
+}
+
+function eliminarRegistroManual(fila) {
+  if (!confirm('Eliminar este registro manual?')) return;
+  fetchJSON(SCRIPT_URL + '?accion=eliminarRegistroManual&fila=' + fila).then(function(data) {
+    if (data.status === 'ok') cargarTablaRegistroManual();
+    else alert('Error: ' + data.message);
+  });
+}
+
+// LUGARES EN PANEL
+function cargarTablaLugares() {
+  document.getElementById('lug-tabla').innerHTML = '<tr><td colspan="2" class="loading-cell">Cargando...</td></tr>';
+  fetchJSON(SCRIPT_URL + '?accion=listarLugares').then(function(data) {
+    var lugares = data.lugares || [];
+    if (lugares.length === 0) {
+      document.getElementById('lug-tabla').innerHTML = '<tr><td colspan="2" class="loading-cell">Sin lugares</td></tr>';
+      return;
+    }
+    var tbody = document.getElementById('lug-tabla');
+    tbody.innerHTML = '';
+    lugares.forEach(function(l) {
+      var tr = document.createElement('tr');
+      var tdNom = document.createElement('td');
+      tdNom.textContent = l;
+      var tdAcc = document.createElement('td');
+      var btn = document.createElement('button');
+      btn.className = 'btn btn-red';
+      btn.style.cssText = 'height:28px;font-size:11px';
+      btn.textContent = 'Eliminar';
+      btn.onclick = function() { eliminarLugarPanel(l); };
+      tdAcc.appendChild(btn);
+      tr.appendChild(tdNom);
+      tr.appendChild(tdAcc);
+      tbody.appendChild(tr);
+    });
+  }).catch(function(e) {
+    document.getElementById('lug-tabla').innerHTML = '<tr><td colspan="2" class="loading-cell" style="color:var(--red)">Error: ' + e.message + '</td></tr>';
+  });
+}
+
+function agregarLugarPanel() {
+  var nom = document.getElementById('lug-nuevo').value.trim();
+  if (!nom) { alert('Escribe el nombre del lugar'); return; }
+  fetchJSON(SCRIPT_URL + '?accion=agregarLugar&lugar=' + encodeURIComponent(nom)).then(function(data) {
+    if (data.status === 'ok') {
+      document.getElementById('lug-nuevo').value = '';
+      cargarTablaLugares();
+    } else alert('Error: ' + data.message);
+  }).catch(function(e) { alert('Error: ' + e.message); });
+}
+
+function eliminarLugarPanel(lugar) {
+  if (!confirm('Eliminar lugar: ' + lugar + '?')) return;
+  fetchJSON(SCRIPT_URL + '?accion=eliminarLugar&lugar=' + encodeURIComponent(lugar)).then(function(data) {
+    if (data.status === 'ok') cargarTablaLugares();
+    else alert('Error: ' + data.message);
+  }).catch(function(e) { alert('Error: ' + e.message); });
+}
+
+// PERSONAL
+function cargarTablaPersonal() {
+  document.getElementById('per-tabla').innerHTML = '<tr><td colspan="5" class="loading-cell">Cargando...</td></tr>';
+  fetchJSON(SCRIPT_URL + '?accion=listarPersonal').then(function(data) {
+    personalData = data.personal || [];
+    poblarSelectores(personalData);
+    document.getElementById('per-tabla').innerHTML = personalData.length === 0
+      ? '<tr><td colspan="5" class="loading-cell">Sin personal</td></tr>'
+      : personalData.map(function(p) {
+          return '<tr><td class="mono">' + p.nombre_sistema + '</td>' +
+            '<td>' + (p.nombre_completo||' ') + '</td>' +
+            '<td class="mono">' + (p.dni||' ') + '</td>' +
+            '<td>' + (p.cargo||' ') + '</td>' +
+            '<td><button class="btn btn-red" style="height:28px;font-size:11px" data-nom="' + p.nombre_sistema + '" onclick="eliminarPersonal(this.getAttribute(\'data-nom\'))">Eliminar</button></td></tr>';
+        }).join('');
+  }).catch(function(e) {
+    document.getElementById('per-tabla').innerHTML = '<tr><td colspan="5" class="loading-cell" style="color:var(--red)">Error: ' + e.message + '</td></tr>';
+  });
+}
+
+function agregarPersonal() {
+  var sistema = document.getElementById('per-sistema').value.trim();
+  var completo = document.getElementById('per-completo').value.trim();
+  var dni = document.getElementById('per-dni').value.trim();
+  var cargo = document.getElementById('per-cargo').value.trim();
+  if (!sistema) { alert('El nombre sistema es obligatorio'); return; }
+  var url = SCRIPT_URL + '?accion=agregarPersonal&nombre_sistema=' + encodeURIComponent(sistema) +
+    '&nombre_completo=' + encodeURIComponent(completo) + '&dni=' + encodeURIComponent(dni) + '&cargo=' + encodeURIComponent(cargo);
+  fetchJSON(url).then(function(data) {
+    if (data.status === 'ok') {
+      ['per-sistema','per-completo','per-dni','per-cargo'].forEach(function(id){document.getElementById(id).value='';});
+      cargarTablaPersonal();
+    } else alert('Error: ' + data.message);
+  }).catch(function(e){ alert('Error: ' + e.message); });
+}
+
+function eliminarPersonal(nombre) {
+  if (!confirm('Eliminar a ' + nombre + '?')) return;
+  fetchJSON(SCRIPT_URL + '?accion=eliminarPersonal&nombre_sistema=' + encodeURIComponent(nombre)).then(function(data) {
+    if (data.status === 'ok') cargarTablaPersonal();
+    else alert('Error: ' + data.message);
+  }).catch(function(e){ alert('Error: ' + e.message); });
+}
+
+// BIOM TRICO
+function agregarBiometrico() {
+  var nom = document.getElementById('bio-nombre').value;
+  var fecha = document.getElementById('bio-fecha').value;
+  var hora = document.getElementById('bio-hora').value;
+  var tipo = document.getElementById('bio-tipo').value;
+  if (!nom || !fecha || !hora) { alert('Completa nombre, fecha y hora'); return; }
+  var fechaFmt = fecha.split('-').reverse().join('/');
+  fetchJSON(SCRIPT_URL + '?accion=agregarBiometrico&nombre=' + encodeURIComponent(nom) +
+    '&fecha=' + encodeURIComponent(fechaFmt) + '&hora=' + encodeURIComponent(hora) + '&tipo=' + encodeURIComponent(tipo))
+  .then(function(data) {
+    if (data.status === 'ok') { alert('  Agregado'); cargarTablaBio(); }
+    else alert('Error: ' + data.message);
+  }).catch(function(e){ alert('Error: ' + e.message); });
+}
+
+function cargarBiometricoMasivo() {
+  var texto = document.getElementById('bio-masivo').value.trim();
+  if (!texto) { alert('Pega datos primero'); return; }
+  var lineas = texto.split('\n').filter(function(l){return l.trim();});
+  var promesas = lineas.map(function(linea) {
+    var cols = linea.split('\t');
+    if (cols.length < 3) return Promise.resolve({status:'error'});
+    // Formato biometrico real: DNI | Nombre | FechaHora | Tipo
+    var dni = cols[0].trim();
+    var nombre = cols[1].trim();
+    var fechaHora = cols[2].trim();
+    var tipo = cols[3] ? cols[3].trim() : '';
+    // Separar fecha y hora del campo "1/04/2026 07:00:59"
+    var partes = fechaHora.split(' ');
+    var fechaRaw = partes[0] || '';
+    var horaRaw = partes[1] ? partes[1].substring(0,5) : '';
+    // Formatear fecha a dd/MM/yyyy
+    var fechaFmt = fechaRaw;
+    if (fechaRaw.includes('/')) {
+      var fp = fechaRaw.split('/');
+      if (fp.length === 3) fechaFmt = fp[0].padStart(2,'0') + '/' + fp[1].padStart(2,'0') + '/' + fp[2];
+    } else if (fechaRaw.includes('-')) {
+      fechaFmt = fechaRaw.split('-').reverse().join('/');
+    }
+    if (!nombre || !fechaFmt || !horaRaw) return Promise.resolve({status:'error'});
+    return fetchJSON(SCRIPT_URL + '?accion=agregarBiometrico&dni=' + encodeURIComponent(dni) +
+      '&nombre=' + encodeURIComponent(nombre) +
+      '&fecha=' + encodeURIComponent(fechaFmt) +
+      '&hora=' + encodeURIComponent(horaRaw) +
+      '&tipo=' + encodeURIComponent(tipo));
+  });
+  Promise.all(promesas).then(function(results) {
+    var ok = results.filter(function(r){return r && r.status==='ok';}).length;
+    alert(ok + ' de ' + results.length + ' registros cargados');
+    document.getElementById('bio-masivo').value = '';
+    cargarTablaBio();
+  });
+}
+
+function cargarTablaBio() {
+  document.getElementById('bio-tabla').innerHTML = '<tr><td colspan="7" class="loading-cell">Cargando...</td></tr>';
+  fetchJSON(SCRIPT_URL + '?accion=leerBiometrico').then(function(data) {
+    var rows = data.registros || [];
+    document.getElementById('bio-tabla').innerHTML = rows.length === 0
+      ? '<tr><td colspan="7" class="loading-cell">Sin registros</td></tr>'
+      : rows.map(function(r) {
+          return '<tr><td class="mono" style="color:var(--text3)">' + r.fila + '</td>' +
+            '<td class="mono">' + (r.dni||' ') + '</td><td>' + r.nombre + '</td>' +
+            '<td class="mono">' + r.fecha + '</td>' +
+            '<td class="mono" style="color:var(--green)">' + r.hora + '</td>' +
+            '<td>' + (r.tipo||' ') + '</td>' +
+            '<td><button class="btn btn-red" style="height:26px;font-size:11px" data-fila="' + r.fila + '" onclick="eliminarBio(this.getAttribute(\'data-fila\'))"> </button></td></tr>';
+        }).join('');
+  }).catch(function(e) {
+    document.getElementById('bio-tabla').innerHTML = '<tr><td colspan="7" class="loading-cell" style="color:var(--red)">Error: ' + e.message + '</td></tr>';
+  });
+}
+
+function eliminarBio(fila) {
+  if (!confirm('Eliminar este registro?')) return;
+  fetchJSON(SCRIPT_URL + '?accion=eliminarBiometrico&fila=' + fila).then(function(data) {
+    if (data.status === 'ok') cargarTablaBio();
+    else alert('Error: ' + data.message);
+  }).catch(function(e){ alert('Error: ' + e.message); });
+}
+
+// EDITAR PROGRAMACI N
+function cargarTablaEditProg() {
+  document.getElementById('ep-tabla').innerHTML = '<tr><td colspan="8" class="loading-cell">Cargando...</td></tr>';
+  fetchJSON(SCRIPT_URL + '?accion=listarLugares').then(function(dataLug) {
+    window._lugaresCache = dataLug.lugares || [];
+    return fetchJSON(SCRIPT_URL + '?accion=leerProgramacion');
+  }).then(function(data) {
+    progData = data.programacion || [];
+    filtrarProg();
+  }).catch(function(e) {
+    document.getElementById('ep-tabla').innerHTML = '<tr><td colspan="8" class="loading-cell" style="color:var(--red)">Error: ' + e.message + '</td></tr>';
+  });
+}
+
+function getLugaresOpts(seleccionado) {
+  const lugares = window._lugaresCache || [];
+  let opts = '<option value="">Sin lugar</option>';
+  lugares.forEach(function(l) {
+    opts += '<option value="' + l + '"' + (l === seleccionado ? ' selected' : '') + '>' + l + '</option>';
+  });
+  // Si el lugar actual no esta en la lista, agregarlo
+  if (seleccionado && !lugares.includes(seleccionado)) {
+    opts += '<option value="' + seleccionado + '" selected>' + seleccionado + '</option>';
+  }
+  return opts;
+}
+
+function filtrarProg() {
+  var filtro = document.getElementById('ep-filtro').value;
+  var rows = filtro ? progData.filter(function(r){return r.estado===filtro;}) : progData;
+  var ESTADOS = window._estadosCache || ['PROGRAMADO','DS','CP','REVISION','T','FE','FR','CO','CPSS','DM','LM','LP','LO','LUB','LS','V','C'];
+  var lugares = window._lugaresCache || [];
+  var tbody = document.getElementById('ep-tabla');
+
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="loading-cell">Sin registros</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = '';
+  rows.forEach(function(r) {
+    var tr = document.createElement('tr');
+    if (r.estado === 'REVISION') tr.style.background = 'rgba(239,68,68,0.05)';
+
+    // Opciones estado
+    var optsEstado = ESTADOS.map(function(e){
+      return '<option value="'+e+'"'+(r.estado===e?' selected':'')+'>'+e+'</option>';
+    }).join('');
+
+    // Opciones lugar
+    var optsLugar = '<option value="">Sin lugar</option>';
+    lugares.forEach(function(l){
+      optsLugar += '<option value="'+l+'"'+(r.lugar===l?' selected':'')+'>'+l+'</option>';
+    });
+    if (r.lugar && lugares.indexOf(r.lugar) === -1) {
+      optsLugar += '<option value="'+r.lugar+'" selected>'+r.lugar+'</option>';
+    }
+
+    tr.innerHTML =
+      '<td class="mono" style="color:var(--text3)">'+r.fila+'</td>'+
+      '<td class="mono">'+r.fecha+'</td>'+
+      '<td>'+r.nombre+'</td>'+
+      '<td><select id="lug'+r.fila+'" style="height:34px;font-size:12px;width:140px">'+optsLugar+'</select></td>'+
+      '<td><input type="text" id="ini'+r.fila+'" value="'+(r.hora_inicio||'')+'" style="width:65px;height:34px;font-size:12px;font-family:monospace" placeholder="00:00"></td>'+
+      '<td><input type="text" id="fin'+r.fila+'" value="'+(r.hora_fin||'')+'" style="width:65px;height:34px;font-size:12px;font-family:monospace" placeholder="00:00"></td>'+
+      '<td><select id="est'+r.fila+'" style="height:34px;font-size:12px">'+optsEstado+'</select></td>'+
+      '<td style="display:flex;gap:6px;padding:4px"></td>';
+
+    // Boton guardar
+    var btnG = document.createElement('button');
+    btnG.className = 'btn btn-primary';
+    btnG.style.cssText = 'height:34px;font-size:12px';
+    btnG.textContent = 'Guardar';
+    btnG.onclick = function(){ guardarProg(r.fila, btnG); };
+
+    // Boton eliminar
+    var btnE = document.createElement('button');
+    btnE.className = 'btn btn-red';
+    btnE.style.cssText = 'height:34px;font-size:12px';
+    btnE.textContent = 'Eliminar';
+    btnE.onclick = function(){ eliminarProg(r.fila); };
+
+    tr.lastElementChild.appendChild(btnG);
+    tr.lastElementChild.appendChild(btnE);
+    tbody.appendChild(tr);
+  });
+}
+
+function guardarProg(fila, btn) {
+  var lugar = document.getElementById('lug'+fila).value;
+  var ini = document.getElementById('ini'+fila).value;
+  var fin = document.getElementById('fin'+fila).value;
+  var est = document.getElementById('est'+fila).value;
+  var url = SCRIPT_URL + '?accion=editarProgramacion&fila=' + fila +
+    '&lugar=' + encodeURIComponent(lugar) + '&hora_inicio=' + encodeURIComponent(ini) +
+    '&hora_fin=' + encodeURIComponent(fin) + '&estado=' + encodeURIComponent(est);
+  fetchJSON(url).then(function(data) {
+    if (data.status === 'ok') {
+      btn.textContent = ' ';
+      setTimeout(function(){btn.textContent=' ';}, 1500);
+    } else alert('Error: ' + data.message);
+  }).catch(function(e){ alert('Error: ' + e.message); });
+}
+
+function eliminarProg(fila) {
+  if (!confirm('Eliminar este registro?')) return;
+  fetchJSON(SCRIPT_URL + '?accion=eliminarProgramacion&fila=' + fila).then(function(data) {
+    if (data.status === 'ok') cargarTablaEditProg();
+    else alert('Error: ' + data.message);
+  }).catch(function(e){ alert('Error: ' + e.message); });
+}
+
+function agregarProgNuevo() {
+  var nombre = document.getElementById('ep-nombre').value;
+  var fecha = document.getElementById('ep-fecha').value;
+  var lugar = document.getElementById('ep-lugar').value;
+  var ini = document.getElementById('ep-inicio').value;
+  var fin = document.getElementById('ep-fin').value;
+  var est = document.getElementById('ep-estado').value;
+  if (!nombre || !fecha) { alert('Nombre y fecha son obligatorios'); return; }
+  var fechaFmt = fecha.split('-').reverse().join('/');
+  fetchJSON(SCRIPT_URL + '?accion=agregarProgramacion&nombre=' + encodeURIComponent(nombre) +
+    '&fecha=' + encodeURIComponent(fechaFmt) + '&lugar=' + encodeURIComponent(lugar) +
+    '&hora_inicio=' + encodeURIComponent(ini) + '&hora_fin=' + encodeURIComponent(fin) +
+    '&estado=' + encodeURIComponent(est)).then(function(data) {
+    if (data.status === 'ok') { alert('  Agregado'); cargarTablaEditProg(); }
+    else alert('Error: ' + data.message);
+  }).catch(function(e){ alert('Error: ' + e.message); });
+}
+</script>
+</body>
+</html>
