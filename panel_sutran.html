@@ -195,6 +195,7 @@ tr:hover td{background:rgba(79,142,247,0.03)}
             <input type="date" id="prog-fecha-filtro" style="height:36px">
           </div>
           <button class="btn btn-primary" onclick="cargarProgDia()">Ver programacion</button>
+          <button class="btn btn-red" onclick="limpiarProgDia()">Limpiar dia</button>
         </div>
         <div class="table-wrap">
           <table>
@@ -920,6 +921,21 @@ function agregarProgDia() {
       cargarProgDia();
     } else alert('Error: ' + data.message);
   }).catch(function(e) { alert('Error: ' + e.message); });
+}
+
+function limpiarProgDia() {
+  var fecha = document.getElementById('prog-fecha-filtro').value;
+  if (!fecha) { alert('Selecciona una fecha'); return; }
+  var fp = fecha.split('-');
+  var fechaFmt = fp[2] + '/' + fp[1] + '/' + fp[0];
+  if (!confirm('Eliminar toda la programacion del ' + fechaFmt + '?')) return;
+  fetchJSON(SCRIPT_URL + '?accion=limpiarProgDia&fecha=' + encodeURIComponent(fechaFmt))
+    .then(function(data) {
+      if (data.status === 'ok') {
+        alert('Programacion del ' + fechaFmt + ' eliminada: ' + data.eliminados + ' registros');
+        cargarProgDia();
+      } else alert('Error: ' + data.message);
+    }).catch(function(e) { alert('Error: ' + e.message); });
 }
 
 function cargarProgDia() {
