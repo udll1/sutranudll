@@ -154,7 +154,8 @@ tr:hover td{background:rgba(79,142,247,0.03)}
       <div class="page-title">Dashboard</div>
       <div class="page-sub">Resumen general del mes seleccionado</div>
       <div class="btn-row no-print">
-        <button class="btn btn-primary" onclick="cargarDashboard()"><svg viewBox="0 0 24 24" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>Actualizar</button>
+        <button class="btn btn-primary" id="btn-actualizar-dash" onclick="cargarDashboard()"><svg viewBox="0 0 24 24" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>Actualizar</button>
+        <span id="dash-estado" style="font-size:12px;color:var(--text3);margin-left:8px"></span>
       </div>
       <div class="stats-grid">
         <div class="stat blue"><div class="stat-val" id="s-personal"> </div><div class="stat-label">Personal registrado</div></div>
@@ -1047,9 +1048,9 @@ function guardarRegistroManual() {
   }
 
   // Deshabilitar boton para evitar duplicados
-  var btnGuardar = document.querySelector('[onclick="guardarRegistroManual()"]');
+  var btnGuardar = document.getElementById('btn-guardar-rm');
   if (btnGuardar) {
-    if (btnGuardar.disabled) return; // Ya se esta procesando
+    if (btnGuardar.disabled) return;
     btnGuardar.disabled = true;
     btnGuardar.textContent = 'Guardando...';
   }
