@@ -476,7 +476,22 @@ function nav(id, el) {
   el.classList.add('active');
   if (id === 'personal') { cargarTablaPersonal(); cargarTablaLugares(); }
   if (id === 'regmanual') cargarRegistroManual();
-  if (id === 'biometrico') cargarTablaBio();
+  if (id === 'biometrico') {
+    cargarTablaBio();
+    // Cargar select de trabajadores con DNI
+    fetchJSON(SCRIPT_URL + '?accion=listarPersonal').then(function(data) {
+      var sel = document.getElementById('bio-nombre');
+      if (!sel) return;
+      sel.innerHTML = '<option value="">Selecciona...</option>';
+      (data.personal||[]).forEach(function(p) {
+        var op = document.createElement('option');
+        op.value = p.nombre_sistema;
+        op.textContent = p.nombre_sistema;
+        if (p.dni) op.setAttribute('data-dni', p.dni);
+        sel.appendChild(op);
+      });
+    });
+  }
   if (id === 'programacion') {
     // Cargar estados desde LEYENDA
     fetchJSON(SCRIPT_URL + '?accion=listarEstados').then(function(data) {
@@ -1262,17 +1277,23 @@ function autoFillDni() {
 
 function agregarBiometrico() {
   var nom = document.getElementById('bio-nombre').value;
+  var dni = document.getElementById('bio-dni') ? document.getElementById('bio-dni').value.trim() : '';
   var fecha = document.getElementById('bio-fecha').value;
   var hora = document.getElementById('bio-hora').value;
   var tipo = document.getElementById('bio-tipo').value;
   if (!nom || !fecha || !hora) { alert('Completa nombre, fecha y hora'); return; }
   var fechaFmt = fecha.split('-').reverse().join('/');
   fetchJSON(SCRIPT_URL + '?accion=agregarBiometrico&nombre=' + encodeURIComponent(nom) +
-    '&fecha=' + encodeURIComponent(fechaFmt) + '&hora=' + encodeURIComponent(hora) + '&tipo=' + encodeURIComponent(tipo))
-  .then(function(data) {
-    if (data.status === 'ok') { alert('  Agregado'); cargarTablaBio(); }
-    else alert('Error: ' + data.message);
-  }).catch(function(e){ alert('Error: ' + e.message); });
+    '&dni=' + encodeURIComponent(dni) +
+    '&fecha=' + encodeURIComponent(fechaFmt) + '&hora=' + encodeURIComponent(hora) + '&tipo=' + encodeURIComponent(tipo)
+  ).then(function(data) {
+    if (data.status === 'ok') {
+      document.getElementById('bio-fecha').value = '';
+      document.getElementById('bio-hora').value = '';
+      if (document.getElementById('bio-dni')) document.getElementById('bio-dni').value = '';
+      cargarTablaBio();
+    } else alert('Error: ' + data.message);
+  }).catch(function(e) { alert('Error: ' + e.message); });
 }
 
 function cargarBiometricoMasivo() {
