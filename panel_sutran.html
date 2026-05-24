@@ -606,6 +606,10 @@ function poblarSelectores(rows) {
 // DASHBOARD
 function cargarDashboard() {
   var mes = getMes(), anio = getAnio();
+  var btn = document.getElementById('btn-actualizar-dash');
+  var estado = document.getElementById('dash-estado');
+  if (btn) { btn.disabled = true; btn.textContent = 'Actualizando...'; }
+  if (estado) { estado.textContent = 'Cargando datos...'; estado.style.color = 'var(--cyan)'; }
   fetchJSON(SCRIPT_URL + '?accion=dashboard&mes=' + mes + '&anio=' + anio).then(function(data) {
     var s = data.stats || {};
     document.getElementById('s-personal').textContent = s.personal || ' ';
@@ -1042,6 +1046,14 @@ function guardarRegistroManual() {
     return;
   }
 
+  // Deshabilitar boton para evitar duplicados
+  var btnGuardar = document.querySelector('[onclick="guardarRegistroManual()"]');
+  if (btnGuardar) {
+    if (btnGuardar.disabled) return; // Ya se esta procesando
+    btnGuardar.disabled = true;
+    btnGuardar.textContent = 'Guardando...';
+  }
+
   // Convertir fecha de yyyy-mm-dd a dd/MM/yyyy
   var fp = fechaInput.split('-');
   var fecha = fp[2] + '/' + fp[1] + '/' + fp[0];
@@ -1068,9 +1080,11 @@ function guardarRegistroManual() {
       estado.textContent = 'Error: ' + data.message;
       estado.style.color = 'var(--red)';
     }
+    if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = 'Guardar Registro'; }
   }).catch(function(e) {
     estado.textContent = 'Error: ' + e.message;
     estado.style.color = 'var(--red)';
+    if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = 'Guardar Registro'; }
   });
 }
 
