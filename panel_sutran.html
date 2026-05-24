@@ -323,9 +323,12 @@ tr:hover td{background:rgba(79,142,247,0.03)}
             <div><div style="font-size:13px;font-weight:500">5. Generar Reporte para Imprimir</div><div style="font-size:11px;color:var(--text3)">Genera hoja REPORTE_IMPRIMIR</div></div>
             <button class="btn btn-primary" onclick="ejecutar('generarReporteImprimir','proc-estado')">Ejecutar</button>
           </div>
-          <div class="proc-item" style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px">
-            <div><div class="proc-num" style="background:var(--yellow);color:#000">6</div><div class="proc-info"><div class="proc-title">Corregir nombres en Programacion</div><div class="proc-desc">Elimina tildes y corrige mayusculas en nombres</div></div></div>
-            <button class="btn" style="background:var(--yellow);color:#000" onclick="ejecutar('unificarNombresProg','proc6-estado')">Ejecutar</button> <span id="proc6-estado"></span>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:var(--bg3);border-radius:var(--r-sm);border:1px solid var(--border);margin-top:8px">
+            <div><div style="font-size:13px;font-weight:500">6. Corregir nombres en Programacion</div><div style="font-size:11px;color:var(--text3)">Elimina tildes y corrige mayusculas en nombres</div></div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <button class="btn" style="background:var(--yellow);color:#000" onclick="ejecutar('unificarNombresProg','proc6-estado')">Ejecutar</button>
+              <span id="proc6-estado" style="font-size:12px"></span>
+            </div>
           </div>
           <button class="btn btn-green" style="height:44px;font-size:14px" onclick="ejecutarTodo()">  Ejecutar Todo en Secuencia</button>
         </div>
