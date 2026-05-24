@@ -435,7 +435,8 @@ tr:hover td{background:rgba(79,142,247,0.03)}
       <div class="card">
         <div class="card-title">Agregar marcacion individual</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
-          <div class="form-field"><label>Trabajador</label><select id="bio-nombre" style="min-width:200px"><option value="">Selecciona...</option></select></div>
+          <div class="form-field"><label>Trabajador</label><select id="bio-nombre" style="min-width:200px" onchange="autoFillDni()"><option value="">Selecciona...</option></select></div>
+          <div class="form-field"><label>DNI</label><input type="text" id="bio-dni" style="width:100px" placeholder="DNI"></div>
           <div class="form-field"><label>Fecha</label><input type="date" id="bio-fecha"></div>
           <div class="form-field"><label>Hora</label><input type="time" id="bio-hora"></div>
           <div class="form-field"><label>Tipo</label><select id="bio-tipo"><option value="">Sin especificar</option><option>Entrada</option><option>Salida</option></select></div>
@@ -1249,6 +1250,16 @@ function eliminarPersonal(nombre) {
 }
 
 // BIOM TRICO
+function autoFillDni() {
+  var sel = document.getElementById('bio-nombre');
+  var dniInput = document.getElementById('bio-dni');
+  if (!sel || !dniInput) return;
+  var op = sel.selectedOptions[0];
+  if (op && op.getAttribute('data-dni')) {
+    dniInput.value = op.getAttribute('data-dni');
+  }
+}
+
 function agregarBiometrico() {
   var nom = document.getElementById('bio-nombre').value;
   var fecha = document.getElementById('bio-fecha').value;
