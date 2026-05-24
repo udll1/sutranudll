@@ -626,7 +626,6 @@ function cargarDashboard() {
       estado.style.color = 'var(--green)';
     }
     if (btn) { btn.disabled = false; btn.textContent = 'Actualizar'; }
-    cargarUltimos();
   }).catch(function(e) {
     if (estado) { estado.textContent = 'Error al actualizar'; estado.style.color = 'var(--red)'; }
     if (btn) { btn.disabled = false; btn.textContent = 'Actualizar'; }
