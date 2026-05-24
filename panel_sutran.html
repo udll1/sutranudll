@@ -626,6 +626,20 @@ function cargarDashboard() {
       estado.style.color = 'var(--green)';
     }
     if (btn) { btn.disabled = false; btn.textContent = 'Actualizar'; }
+    // Cargar ultimos registros
+    fetchJSON(SCRIPT_URL + '?accion=leerAsistencia&mes=' + mes + '&anio=' + anio).then(function(data2) {
+      var rows = (data2.asistencia || []).slice(-10).reverse();
+      var tbody = document.getElementById('dash-tabla');
+      if (!tbody) return;
+      if (rows.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="loading-cell">Sin registros</td></tr>'; return; }
+      tbody.innerHTML = '';
+      rows.forEach(function(r) {
+        var estado_color = r.estado==='A'?'green':r.estado==='F'?'red':r.estado==='DS'?'gray':'yellow';
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td>'+r.nombre+'</td><td>'+r.lugar+'</td><td>'+r.fecha+'</td><td>'+(r.h_inicio||'')+' - '+(r.h_fin||'')+'</td><td>'+(r.entrada||'')+'</td><td>'+(r.salida||'')+'</td><td><span class="badge '+estado_color+'">'+r.estado+'</span></td>';
+        tbody.appendChild(tr);
+      });
+    }).catch(function(){});
   }).catch(function(e) {
     if (estado) { estado.textContent = 'Error al actualizar'; estado.style.color = 'var(--red)'; }
     if (btn) { btn.disabled = false; btn.textContent = 'Actualizar'; }
