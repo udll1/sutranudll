@@ -611,30 +611,25 @@ function cargarDashboard() {
   var estado = document.getElementById('dash-estado');
   if (btn) { btn.disabled = true; btn.textContent = 'Actualizando...'; }
   if (estado) { estado.textContent = 'Cargando datos...'; estado.style.color = 'var(--cyan)'; }
+
   fetchJSON(SCRIPT_URL + '?accion=dashboard&mes=' + mes + '&anio=' + anio).then(function(data) {
     var s = data.stats || {};
-    document.getElementById('s-personal').textContent = s.personal || ' ';
+    document.getElementById('s-personal').textContent = s.personal || '0';
     document.getElementById('s-asist').textContent = s.asistencias || '0';
     document.getElementById('s-faltas').textContent = s.faltas || '0';
     document.getElementById('s-foto').textContent = s.registros_foto || '0';
     document.getElementById('s-bio').textContent = s.registros_bio || '0';
     document.getElementById('s-ds').textContent = s.descansos || '0';
-  }).catch(function(e) { console.error(e); });
-
-  fetchJSON(SCRIPT_URL + '?accion=leerAsistencia&mes=' + mes + '&anio=' + anio).then(function(data) {
-    var rows = (data.asistencia || []).slice(-20).reverse();
-    document.getElementById('dash-tabla').innerHTML = rows.length === 0
-      ? '<tr><td colspan="7" class="loading-cell">Sin datos este mes</td></tr>'
-      : rows.map(function(r) {
-          return '<tr><td>' + r.nombre + '</td><td>' + (r.lugar||' ') + '</td>' +
-            '<td class="mono">' + r.fecha + '</td>' +
-            '<td class="mono">' + (r.hora_inicio||'') + (r.hora_fin?' - '+r.hora_fin:'') + '</td>' +
-            '<td class="mono" style="color:var(--green)">' + (r.entrada||' ') + '</td>' +
-            '<td class="mono" style="color:var(--red)">' + (r.salida||' ') + '</td>' +
-            '<td>' + badge(r.estado) + '</td></tr>';
-        }).join('');
+    var ahora = new Date();
+    if (estado) { 
+      estado.textContent = 'Actualizado ' + String(ahora.getHours()).padStart(2,'0') + ':' + String(ahora.getMinutes()).padStart(2,'0');
+      estado.style.color = 'var(--green)';
+    }
+    if (btn) { btn.disabled = false; btn.textContent = 'Actualizar'; }
+    cargarUltimos();
   }).catch(function(e) {
-    document.getElementById('dash-tabla').innerHTML = '<tr><td colspan="7" class="loading-cell" style="color:var(--red)">Error: ' + e.message + '</td></tr>';
+    if (estado) { estado.textContent = 'Error al actualizar'; estado.style.color = 'var(--red)'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Actualizar'; }
   });
 }
 
