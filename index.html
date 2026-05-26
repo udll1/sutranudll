@@ -3,7 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Control de Asistencia</title>
+<title>Control de Asistencia SUTRAN</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1A56DB">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SUTRAN UDLL">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -69,7 +75,7 @@ input[type=file]{display:none}
 
 <div id="contenedor-principal" style="display:none;">
 <script>
-const SCRIPT_URL="https://script.google.com/macros/s/AKfycbyTQiXr_fNbitqxiolm4b-3srL9meq0Vw_jJOd41jxwBfvj9KQ1zGBZ5wD8LNIDSZTH/exec";
+const SCRIPT_URL="https://script.google.com/macros/s/AKfycbzcqptaToIrUEWRKYCDaWQ0PtDPqivq43iprR4spfUbHWA0Q9ePM56qQh4FAjA8MGi2/exec";
 const SCRIPT_FOTO_URL="https://script.google.com/macros/s/AKfycbxv3nHqMU-jXcfOfPEPw7Knf12MWOtttrmVXk_xh6atveKp_btDog3V-eaxiJE9YnJY/exec";
 </script>
 <div class="header">
@@ -390,5 +396,16 @@ function nuevoRegistro(){
 cargarSelect();
 </script>
 </div>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').then(function(reg) {
+      console.log('SW registrado');
+    }).catch(function(err) {
+      console.log('SW error:', err);
+    });
+  });
+}
+</script>
 </body>
 </html>
