@@ -1306,27 +1306,54 @@ function agregarBiometrico() {
 function cargarBiometricoMasivo() {
   var texto = document.getElementById('bio-masivo').value.trim();
   if (!texto) { alert('Pega datos primero'); return; }
-  
-  var btn = document.querySelector('[onclick="cargarBiometricoMasivo()"]');
-  if (btn) { btn.disabled = true; btn.textContent = 'Cargando...'; }
-  var estado = document.getElementById('bio-masivo-estado');
-  if (estado) estado.textContent = 'Procesando...';
 
-  // Enviar todo el texto de una vez al script
-  fetchJSON(SCRIPT_URL + '?accion=cargarBiometricoMasivo&datos=' + encodeURIComponent(texto))
-    .then(function(data) {
-      if (btn) { btn.disabled = false; btn.textContent = 'Cargar masivo'; }
-      if (data.status === 'ok') {
-        if (estado) { estado.textContent = 'Cargados: ' + data.agregados + ' registros'; estado.style.color = 'var(--green)'; }
-        document.getElementById('bio-masivo').value = '';
-        cargarTablaBio();
-      } else {
-        if (estado) { estado.textContent = 'Error: ' + data.message; estado.style.color = 'var(--red)'; }
-      }
-    }).catch(function(e) {
-      if (btn) { btn.disabled = false; btn.textContent = 'Cargar masivo'; }
-      if (estado) { estado.textContent = 'Error: ' + e.message; estado.style.color = 'var(--red)'; }
-    });
+  var lineas = texto.split('\n').filter(function(l){ return l.trim(); });
+  if (lineas.length === 0) { alert('Sin datos validos'); return; }
+
+  var btn = document.querySelector('[onclick="cargarBiometricoMasivo()"]');
+  var estado = document.getElementById('bio-masivo-estado');
+  if (btn) { btn.disabled = true; }
+
+  var LOTE = 10;
+  var totalLotes = Math.ceil(lineas.length / LOTE);
+  var loteActual = 0;
+  var totalAgregados = 0;
+  var totalDuplicados = 0;
+
+  function procesarLote() {
+    var inicio = loteActual * LOTE;
+    var fin = Math.min(inicio + LOTE, lineas.length);
+    var lote = lineas.slice(inicio, fin).join('\n');
+
+    if (estado) {
+      estado.textContent = 'Cargando lote ' + (loteActual+1) + ' de ' + totalLotes + '...';
+      estado.style.color = 'var(--cyan)';
+    }
+    if (btn) btn.textContent = 'Cargando ' + Math.round(((loteActual+1)/totalLotes)*100) + '%...';
+
+    fetchJSON(SCRIPT_URL + '?accion=cargarBiometricoMasivo&datos=' + encodeURIComponent(lote))
+      .then(function(data) {
+        totalAgregados += data.agregados || 0;
+        totalDuplicados += data.duplicados || 0;
+        loteActual++;
+        if (loteActual < totalLotes) {
+          procesarLote();
+        } else {
+          // Terminado
+          if (btn) { btn.disabled = false; btn.textContent = 'Cargar masivo'; }
+          var msg = '✅ Cargados: ' + totalAgregados + ' registros';
+          if (totalDuplicados > 0) msg += ' (' + totalDuplicados + ' duplicados ignorados)';
+          if (estado) { estado.textContent = msg; estado.style.color = 'var(--green)'; }
+          document.getElementById('bio-masivo').value = '';
+          cargarTablaBio();
+        }
+      }).catch(function(e) {
+        if (btn) { btn.disabled = false; btn.textContent = 'Cargar masivo'; }
+        if (estado) { estado.textContent = 'Error en lote ' + (loteActual+1) + ': ' + e.message; estado.style.color = 'var(--red)'; }
+      });
+  }
+
+  procesarLote();
 }
 
 function cargarTablaBio() {
