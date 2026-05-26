@@ -548,6 +548,24 @@ function nav(id, el) {
 }
 
 // JSONP fetch
+function fetchPOST(url, datos) {
+  return new Promise(function(resolve, reject) {
+    var form = new FormData();
+    form.append('datos', datos);
+    fetch(url, { method: 'POST', body: form })
+      .then(function(r) { return r.text(); })
+      .then(function(text) {
+        try { resolve(JSON.parse(text)); }
+        catch(e) { 
+          // Intentar extraer JSON del callback JSONP
+          var m = text.match(/\{.*\}/s);
+          if (m) resolve(JSON.parse(m[0]));
+          else reject(new Error('Respuesta invalida'));
+        }
+      }).catch(reject);
+  });
+}
+
 function fetchJSON(url) {
   return new Promise(function(resolve, reject) {
     var cbName = 'cb' + Date.now() + Math.floor(Math.random()*9999);
@@ -1314,46 +1332,63 @@ function cargarBiometricoMasivo() {
   var estado = document.getElementById('bio-masivo-estado');
   if (btn) { btn.disabled = true; }
 
-  var LOTE = 10;
-  var totalLotes = Math.ceil(lineas.length / LOTE);
-  var loteActual = 0;
+  // Procesar cada linea individualmente con delay
   var totalAgregados = 0;
   var totalDuplicados = 0;
+  var errores = 0;
+  var procesados = 0;
+  var total = lineas.length;
 
-  function procesarLote() {
-    var inicio = loteActual * LOTE;
-    var fin = Math.min(inicio + LOTE, lineas.length);
-    var lote = lineas.slice(inicio, fin).join('\n');
-
-    if (estado) {
-      estado.textContent = 'Cargando lote ' + (loteActual+1) + ' de ' + totalLotes + '...';
-      estado.style.color = 'var(--cyan)';
+  function procesarLinea(idx) {
+    if (idx >= total) {
+      // Terminado
+      if (btn) { btn.disabled = false; btn.textContent = 'Cargar masivo'; }
+      var msg = '✅ Cargados: ' + totalAgregados + ' de ' + total;
+      if (totalDuplicados > 0) msg += ' (' + totalDuplicados + ' duplicados)';
+      if (estado) { estado.textContent = msg; estado.style.color = 'var(--green)'; }
+      document.getElementById('bio-masivo').value = '';
+      cargarTablaBio();
+      return;
     }
-    if (btn) btn.textContent = 'Cargando ' + Math.round(((loteActual+1)/totalLotes)*100) + '%...';
 
-    fetchJSON(SCRIPT_URL + '?accion=cargarBiometricoMasivo&datos=' + encodeURIComponent(lote))
-      .then(function(data) {
-        totalAgregados += data.agregados || 0;
-        totalDuplicados += data.duplicados || 0;
-        loteActual++;
-        if (loteActual < totalLotes) {
-          procesarLote();
-        } else {
-          // Terminado
-          if (btn) { btn.disabled = false; btn.textContent = 'Cargar masivo'; }
-          var msg = '✅ Cargados: ' + totalAgregados + ' registros';
-          if (totalDuplicados > 0) msg += ' (' + totalDuplicados + ' duplicados ignorados)';
-          if (estado) { estado.textContent = msg; estado.style.color = 'var(--green)'; }
-          document.getElementById('bio-masivo').value = '';
-          cargarTablaBio();
-        }
-      }).catch(function(e) {
-        if (btn) { btn.disabled = false; btn.textContent = 'Cargar masivo'; }
-        if (estado) { estado.textContent = 'Error en lote ' + (loteActual+1) + ': ' + e.message; estado.style.color = 'var(--red)'; }
-      });
+    var linea = lineas[idx].trim();
+    if (!linea) { procesarLinea(idx+1); return; }
+
+    var cols = linea.split('	');
+    if (cols.length < 3) { procesarLinea(idx+1); return; }
+
+    var dni = cols[0].trim();
+    var nombre = cols[1].trim();
+    var fechaHora = cols[2].trim();
+    var partes = fechaHora.split(' ');
+    var fechaRaw = partes[0] || '';
+    var horaRaw = partes[1] ? partes[1].substring(0,5) : (cols[3] ? cols[3].trim().substring(0,5) : '');
+    var fp = fechaRaw.split('/');
+    var fechaFmt = fp.length === 3 ? fp[0].padStart(2,'0')+'/'+fp[1].padStart(2,'0')+'/'+fp[2] : fechaRaw;
+    var tipo = cols[3] && !cols[3].includes(':') ? cols[3].trim() : (cols[4] ? cols[4].trim() : 'Entrada');
+
+    if (!nombre || !fechaFmt || !horaRaw) { procesarLinea(idx+1); return; }
+
+    var pct = Math.round(((idx+1)/total)*100);
+    if (btn) btn.textContent = 'Cargando ' + pct + '%... (' + (idx+1) + '/' + total + ')';
+    if (estado) { estado.textContent = 'Procesando registro ' + (idx+1) + ' de ' + total; estado.style.color = 'var(--cyan)'; }
+
+    fetchJSON(SCRIPT_URL + '?accion=agregarBiometrico&dni=' + encodeURIComponent(dni) +
+      '&nombre=' + encodeURIComponent(nombre) +
+      '&fecha=' + encodeURIComponent(fechaFmt) +
+      '&hora=' + encodeURIComponent(horaRaw) +
+      '&tipo=' + encodeURIComponent(tipo)
+    ).then(function(data) {
+      if (data.status === 'ok') totalAgregados++;
+      else totalDuplicados++;
+      setTimeout(function(){ procesarLinea(idx+1); }, 200);
+    }).catch(function() {
+      errores++;
+      setTimeout(function(){ procesarLinea(idx+1); }, 200);
+    });
   }
 
-  procesarLote();
+  procesarLinea(0);
 }
 
 function cargarTablaBio() {
