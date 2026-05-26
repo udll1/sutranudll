@@ -222,6 +222,10 @@ tr:hover td{background:rgba(79,142,247,0.03)}
               <label>H. Fin</label>
               <input type="text" id="prog-add-fin" placeholder="17:00" style="height:34px;width:100%;font-family:monospace">
             </div>
+            <div class="form-field">
+              <label>Observacion</label>
+              <input type="text" id="prog-add-obs" placeholder="Ej: Compensa 15/03/2026" style="height:34px;width:100%">
+            </div>
             <button class="btn btn-green" onclick="agregarProgDia()" style="height:34px">+ Agregar</button>
           </div>
         </div>
@@ -745,8 +749,9 @@ function cargarMensual() {
       html += '<tr><td class="lname">' + r['NOMBRE'] + '</td>';
       for (var d=1;d<=31;d++) {
         var v = r[String(d)] || '';
-        var bg = v==='F'?'background:rgba(239,68,68,0.15)':v==='DS'?'background:rgba(79,142,247,0.1)':v==='CP'?'background:rgba(245,158,11,0.1)':'';
-        html += '<td style="' + bg + '">' + (v ? badge(v) : '') + '</td>';
+        var obs = r['obs_' + String(d)] || '';
+        var bg = v==='F'?'background:rgba(239,68,68,0.15)':v==='DS'?'background:rgba(79,142,247,0.1)':v==='CP'||v==='CPSS'?'background:rgba(245,158,11,0.1)':'';
+        html += '<td style="' + bg + '">' + (v ? badge(v, obs) : '') + '</td>';
       }
       html += '<td class="mono" style="color:var(--red)">' + (r['TOTAL F']||'') + '</td>';
       html += '<td class="mono" style="color:var(--yellow)">' + (r['TOTAL T']||'') + '</td>';
@@ -775,8 +780,9 @@ function cargarImprimir() {
       html += '<td style="font-size:11px;color:var(--text2)">' + (r['CARGO']||'') + '</td>';
       for (var d=1;d<=31;d++) {
         var v = r[String(d)] || '';
-        var bg = v==='F'?'background:rgba(239,68,68,0.15)':v==='DS'?'background:rgba(79,142,247,0.1)':v==='CP'?'background:rgba(245,158,11,0.1)':'';
-        html += '<td style="' + bg + '">' + (v ? badge(v) : '') + '</td>';
+        var obs = r['obs_' + String(d)] || '';
+        var bg = v==='F'?'background:rgba(239,68,68,0.15)':v==='DS'?'background:rgba(79,142,247,0.1)':v==='CP'||v==='CPSS'?'background:rgba(245,158,11,0.1)':'';
+        html += '<td style="' + bg + '">' + (v ? badge(v, obs) : '') + '</td>';
       }
       html += '<td class="mono" style="color:var(--blue)">' + (r['DIAS TRABAJADOS']||'') + '</td>';
       html += '<td></td></tr>';
@@ -949,17 +955,20 @@ function agregarProgDia() {
   var lugar = document.getElementById('prog-add-lugar').value;
   var inicio = document.getElementById('prog-add-inicio').value;
   var fin = document.getElementById('prog-add-fin').value;
+  var obs = document.getElementById('prog-add-obs') ? document.getElementById('prog-add-obs').value.trim() : '';
   if (!nombre) { alert('Selecciona un trabajador'); return; }
   fetchJSON(SCRIPT_URL + '?accion=agregarProgramacion&fecha=' + encodeURIComponent(fechaFmt) +
     '&nombre=' + encodeURIComponent(nombre) +
     '&lugar=' + encodeURIComponent(lugar) +
     '&hora_inicio=' + encodeURIComponent(inicio) +
     '&hora_fin=' + encodeURIComponent(fin) +
-    '&estado=PROGRAMADO'
+    '&estado=PROGRAMADO' +
+    '&obs=' + encodeURIComponent(obs)
   ).then(function(data) {
     if (data.status === 'ok') {
       document.getElementById('prog-add-inicio').value = '';
       document.getElementById('prog-add-fin').value = '';
+      if (document.getElementById('prog-add-obs')) document.getElementById('prog-add-obs').value = '';
       cargarProgDia();
     } else alert('Error: ' + data.message);
   }).catch(function(e) { alert('Error: ' + e.message); });
