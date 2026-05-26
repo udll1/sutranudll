@@ -1306,40 +1306,27 @@ function agregarBiometrico() {
 function cargarBiometricoMasivo() {
   var texto = document.getElementById('bio-masivo').value.trim();
   if (!texto) { alert('Pega datos primero'); return; }
-  var lineas = texto.split('\n').filter(function(l){return l.trim();});
-  var promesas = lineas.map(function(linea) {
-    var cols = linea.split('\t');
-    if (cols.length < 3) return Promise.resolve({status:'error'});
-    // Formato biometrico real: DNI | Nombre | FechaHora | Tipo
-    var dni = cols[0].trim();
-    var nombre = cols[1].trim();
-    var fechaHora = cols[2].trim();
-    var tipo = cols[3] ? cols[3].trim() : '';
-    // Separar fecha y hora del campo "1/04/2026 07:00:59"
-    var partes = fechaHora.split(' ');
-    var fechaRaw = partes[0] || '';
-    var horaRaw = partes[1] ? partes[1].substring(0,5) : '';
-    // Formatear fecha a dd/MM/yyyy
-    var fechaFmt = fechaRaw;
-    if (fechaRaw.includes('/')) {
-      var fp = fechaRaw.split('/');
-      if (fp.length === 3) fechaFmt = fp[0].padStart(2,'0') + '/' + fp[1].padStart(2,'0') + '/' + fp[2];
-    } else if (fechaRaw.includes('-')) {
-      fechaFmt = fechaRaw.split('-').reverse().join('/');
-    }
-    if (!nombre || !fechaFmt || !horaRaw) return Promise.resolve({status:'error'});
-    return fetchJSON(SCRIPT_URL + '?accion=agregarBiometrico&dni=' + encodeURIComponent(dni) +
-      '&nombre=' + encodeURIComponent(nombre) +
-      '&fecha=' + encodeURIComponent(fechaFmt) +
-      '&hora=' + encodeURIComponent(horaRaw) +
-      '&tipo=' + encodeURIComponent(tipo));
-  });
-  Promise.all(promesas).then(function(results) {
-    var ok = results.filter(function(r){return r && r.status==='ok';}).length;
-    alert(ok + ' de ' + results.length + ' registros cargados');
-    document.getElementById('bio-masivo').value = '';
-    cargarTablaBio();
-  });
+  
+  var btn = document.querySelector('[onclick="cargarBiometricoMasivo()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Cargando...'; }
+  var estado = document.getElementById('bio-masivo-estado');
+  if (estado) estado.textContent = 'Procesando...';
+
+  // Enviar todo el texto de una vez al script
+  fetchJSON(SCRIPT_URL + '?accion=cargarBiometricoMasivo&datos=' + encodeURIComponent(texto))
+    .then(function(data) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Cargar masivo'; }
+      if (data.status === 'ok') {
+        if (estado) { estado.textContent = 'Cargados: ' + data.agregados + ' registros'; estado.style.color = 'var(--green)'; }
+        document.getElementById('bio-masivo').value = '';
+        cargarTablaBio();
+      } else {
+        if (estado) { estado.textContent = 'Error: ' + data.message; estado.style.color = 'var(--red)'; }
+      }
+    }).catch(function(e) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Cargar masivo'; }
+      if (estado) { estado.textContent = 'Error: ' + e.message; estado.style.color = 'var(--red)'; }
+    });
 }
 
 function cargarTablaBio() {
