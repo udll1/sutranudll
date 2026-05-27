@@ -199,7 +199,7 @@ tr:hover td{background:rgba(79,142,247,0.03)}
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Nombre</th><th>Lugar</th><th>H.Inicio</th><th>H.Fin</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <thead><tr><th>Nombre</th><th>Lugar</th><th>H.Ini</th><th>H.Fin</th><th>Estado</th><th>Observacion</th><th></th></tr></thead>
             <tbody id="prog-dia-tabla"><tr><td colspan="6" class="loading-cell">Selecciona un dia</td></tr></tbody>
           </table>
         </div>
@@ -1028,21 +1028,24 @@ function cargarProgDia() {
       });
       if (r.lugar && lug.indexOf(r.lugar) === -1) optsLugar += '<option value="'+r.lugar+'" selected>'+r.lugar+'</option>';
       tr.innerHTML =
-        '<td>'+r.nombre+'</td>'+
-        '<td><select id="dlug'+r.fila+'" style="height:32px;font-size:12px;width:130px">'+optsLugar+'</select></td>'+
-        '<td><input type="text" id="dini'+r.fila+'" value="'+(r.hora_inicio||'')+'" style="width:60px;height:32px;font-size:12px;font-family:monospace" placeholder="00:00"></td>'+
-        '<td><input type="text" id="dfin'+r.fila+'" value="'+(r.hora_fin||'')+'" style="width:60px;height:32px;font-size:12px;font-family:monospace" placeholder="00:00"></td>'+
-        '<td><select id="dest'+r.fila+'" style="height:32px;font-size:12px">'+optsEstado+'</select></td>'+
-        '<td style="display:flex;gap:4px;padding:4px"></td>';
+        '<td style="font-size:12px;font-weight:500">'+r.nombre+'</td>'+
+        '<td><select id="dlug'+r.fila+'" style="height:28px;font-size:11px;width:120px">'+optsLugar+'</select></td>'+
+        '<td><input type="text" id="dini'+r.fila+'" value="'+(r.hora_inicio||'')+'" style="width:55px;height:28px;font-size:11px;font-family:monospace" placeholder="00:00"></td>'+
+        '<td><input type="text" id="dfin'+r.fila+'" value="'+(r.hora_fin||'')+'" style="width:55px;height:28px;font-size:11px;font-family:monospace" placeholder="00:00"></td>'+
+        '<td><select id="dest'+r.fila+'" style="height:28px;font-size:11px">'+optsEstado+'</select></td>'+
+        '<td><input type="text" id="dobs'+r.fila+'" value="'+(r.obs||'')+'" style="width:140px;height:28px;font-size:11px" placeholder="Observacion..."></td>'+
+        '<td style="display:flex;gap:4px;padding:4px;align-items:center"></td>';
       var btnG = document.createElement('button');
       btnG.className = 'btn btn-primary';
-      btnG.style.cssText = 'height:32px;font-size:11px';
-      btnG.textContent = 'Guardar';
+      btnG.style.cssText = 'height:28px;width:28px;padding:0;display:flex;align-items:center;justify-content:center';
+      btnG.title = 'Guardar';
+      btnG.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" stroke="white" stroke-width="2" fill="none"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>';
       btnG.onclick = function(){ guardarProgDia(r.fila, btnG); };
       var btnE = document.createElement('button');
       btnE.className = 'btn btn-red';
-      btnE.style.cssText = 'height:32px;font-size:11px';
-      btnE.textContent = 'Eliminar';
+      btnE.style.cssText = 'height:28px;width:28px;padding:0;display:flex;align-items:center;justify-content:center';
+      btnE.title = 'Eliminar';
+      btnE.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" stroke="white" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>';
       btnE.onclick = function(){ eliminarProgDia(r.fila); };
       tr.lastElementChild.appendChild(btnG);
       tr.lastElementChild.appendChild(btnE);
@@ -1058,6 +1061,7 @@ function guardarProgDia(fila, btn) {
   var ini = document.getElementById('dini'+fila).value;
   var fin = document.getElementById('dfin'+fila).value;
   var est = document.getElementById('dest'+fila).value;
+  var obs = document.getElementById('dobs'+fila) ? document.getElementById('dobs'+fila).value.trim() : '';
   fetchJSON(SCRIPT_URL + '?accion=editarProgramacion&fila=' + fila +
     '&lugar=' + encodeURIComponent(lugar) + '&hora_inicio=' + encodeURIComponent(ini) +
     '&hora_fin=' + encodeURIComponent(fin) + '&estado=' + encodeURIComponent(est))
