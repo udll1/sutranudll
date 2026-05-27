@@ -596,9 +596,10 @@ function fetchJSON(url) {
 function getMes() { return document.getElementById('g-mes').value; }
 function getAnio() { return document.getElementById('g-anio').value; }
 
-function badge(nom) {
+function badge(nom, obs) {
   if (!nom) return '<span style="color:var(--text3)"> </span>';
-  return '<span class="badge b-' + nom + '">' + nom + '</span>';
+  var title = obs ? ' title="' + obs + '" style="cursor:help"' : '';
+  return '<span class="badge b-' + nom + '"' + title + '>' + nom + '</span>';
 }
 
 function setEstado(id, tipo, msg) {
