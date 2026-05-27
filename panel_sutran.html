@@ -1064,11 +1064,12 @@ function guardarProgDia(fila, btn) {
   var obs = document.getElementById('dobs'+fila) ? document.getElementById('dobs'+fila).value.trim() : '';
   fetchJSON(SCRIPT_URL + '?accion=editarProgramacion&fila=' + fila +
     '&lugar=' + encodeURIComponent(lugar) + '&hora_inicio=' + encodeURIComponent(ini) +
-    '&hora_fin=' + encodeURIComponent(fin) + '&estado=' + encodeURIComponent(est))
+    '&hora_fin=' + encodeURIComponent(fin) + '&estado=' + encodeURIComponent(est) +
+    '&obs=' + encodeURIComponent(obs))
   .then(function(data) {
     if (data.status === 'ok') {
-      btn.textContent = 'Guardado';
-      setTimeout(function(){btn.textContent='Guardar';}, 1500);
+      btn.style.background = 'var(--green)';
+      setTimeout(function(){ btn.style.background = ''; }, 1500);
     } else alert('Error: ' + data.message);
   }).catch(function(e){ alert('Error: ' + e.message); });
 }
