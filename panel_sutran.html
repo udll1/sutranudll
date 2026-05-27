@@ -1057,6 +1057,9 @@ function cargarProgDia() {
 }
 
 function guardarProgDia(fila, btn) {
+  console.log('Guardando fila:', fila);
+  var obs = document.getElementById('dobs'+fila);
+  console.log('Campo obs:', obs ? obs.value : 'NO ENCONTRADO');
   var lugar = document.getElementById('dlug'+fila).value;
   var ini = document.getElementById('dini'+fila).value;
   var fin = document.getElementById('dfin'+fila).value;
