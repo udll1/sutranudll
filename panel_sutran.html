@@ -228,6 +228,7 @@ tr:hover td{background:rgba(79,142,247,0.03)}
             </div>
             <button class="btn btn-green" onclick="agregarProgDia()" style="height:34px">+ Agregar</button>
             <button class="btn" onclick="completarProgBase()" style="height:34px;background:#0EA5E9;color:white" title="Agrega los trabajadores faltantes con su horario base configurado">+ Completar dia</button>
+            <button class="btn" onclick="abrirRangoFechas()" style="height:34px;background:#8B5CF6;color:white" title="Asignar un estado (V, CPSS, etc) a varios dias seguidos">+ Rango de fechas</button>
           </div>
         </div>
       </div>
@@ -1358,6 +1359,54 @@ function abrirEditorHorarioBase(nombre, hi, hf, lugar, dias) {
   });
 }
 
+function abrirRangoFechas() {
+  document.getElementById('modal-rango').style.display = 'flex';
+  // Poblar selector de trabajadores
+  var sel = document.getElementById('rango-nombre');
+  sel.innerHTML = '<option value="">Selecciona trabajador...</option>';
+  personalData.forEach(function(p) {
+    var op = document.createElement('option');
+    op.value = p.nombre_sistema;
+    op.textContent = p.nombre_sistema;
+    sel.appendChild(op);
+  });
+}
+
+function cerrarRangoFechas() {
+  document.getElementById('modal-rango').style.display = 'none';
+}
+
+function aplicarRangoFechas() {
+  var nombre = document.getElementById('rango-nombre').value;
+  var fini = document.getElementById('rango-ini').value;
+  var ffin = document.getElementById('rango-fin').value;
+  var estado = document.getElementById('rango-estado').value;
+  var obs = document.getElementById('rango-obs').value.trim();
+
+  if (!nombre || !fini || !ffin || !estado) {
+    alert('Completa todos los campos requeridos');
+    return;
+  }
+  var pi = fini.split('-'), pf = ffin.split('-');
+  var iniFmt = pi[2] + '/' + pi[1] + '/' + pi[0];
+  var finFmt = pf[2] + '/' + pf[1] + '/' + pf[0];
+
+  if (!confirm('Asignar ' + estado + ' a ' + nombre + ' del ' + iniFmt + ' al ' + finFmt + '?\n\nSi ya tiene programacion en ese rango, sera reemplazada.')) return;
+
+  fetchJSON(SCRIPT_URL + '?accion=asignarRangoFechas&nombre=' + encodeURIComponent(nombre) +
+    '&fecha_inicio=' + encodeURIComponent(iniFmt) +
+    '&fecha_fin=' + encodeURIComponent(finFmt) +
+    '&estado=' + encodeURIComponent(estado) +
+    '&obs=' + encodeURIComponent(obs)
+  ).then(function(data) {
+    if (data.status === 'ok') {
+      alert('Se agregaron ' + data.agregados + ' dias' + (data.eliminados > 0 ? ' (' + data.eliminados + ' reemplazados)' : ''));
+      cerrarRangoFechas();
+      cargarProgDia();
+    } else alert('Error: ' + data.message);
+  });
+}
+
 function completarProgMes() {
   var mes = document.getElementById('g-mes').value;
   var anio = document.getElementById('g-anio').value;
@@ -1653,5 +1702,54 @@ function agregarProgNuevo() {
   }).catch(function(e){ alert('Error: ' + e.message); });
 }
 </script>
+
+<!-- Modal Rango de Fechas -->
+<div id="modal-rango" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:white;padding:24px;border-radius:8px;width:480px;max-width:90%;box-shadow:0 10px 25px rgba(0,0,0,0.3)">
+    <div style="font-size:16px;font-weight:600;margin-bottom:16px;color:#1F3864">Asignar rango de fechas</div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div>
+        <label style="font-size:12px;color:#555;display:block;margin-bottom:4px">Trabajador</label>
+        <select id="rango-nombre" style="width:100%;height:36px;padding:0 8px;border:1px solid #ddd;border-radius:4px;font-size:13px"></select>
+      </div>
+      <div style="display:flex;gap:10px">
+        <div style="flex:1">
+          <label style="font-size:12px;color:#555;display:block;margin-bottom:4px">Fecha inicio</label>
+          <input type="date" id="rango-ini" style="width:100%;height:36px;padding:0 8px;border:1px solid #ddd;border-radius:4px;font-size:13px">
+        </div>
+        <div style="flex:1">
+          <label style="font-size:12px;color:#555;display:block;margin-bottom:4px">Fecha fin</label>
+          <input type="date" id="rango-fin" style="width:100%;height:36px;padding:0 8px;border:1px solid #ddd;border-radius:4px;font-size:13px">
+        </div>
+      </div>
+      <div>
+        <label style="font-size:12px;color:#555;display:block;margin-bottom:4px">Estado</label>
+        <select id="rango-estado" style="width:100%;height:36px;padding:0 8px;border:1px solid #ddd;border-radius:4px;font-size:13px">
+          <option value="V">V - Vacaciones</option>
+          <option value="CPSS">CPSS - Compensacion</option>
+          <option value="CO">CO - Comision de servicios</option>
+          <option value="DS">DS - Descanso semanal</option>
+          <option value="DM">DM - Descanso medico</option>
+          <option value="LM">LM - Licencia maternidad</option>
+          <option value="LP">LP - Licencia paternidad</option>
+          <option value="LO">LO - Licencia oficial</option>
+          <option value="LUB">LUB - Licencia uso de beneficios</option>
+          <option value="LS">LS - Licencia sin goce</option>
+          <option value="FE">FE - Feriado</option>
+          <option value="FR">FR - Feriado regional</option>
+          <option value="CP">CP - Compensacion</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;color:#555;display:block;margin-bottom:4px">Observacion (opcional)</label>
+        <input type="text" id="rango-obs" placeholder="Ej: Vacaciones programadas" style="width:100%;height:36px;padding:0 8px;border:1px solid #ddd;border-radius:4px;font-size:13px">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+      <button class="btn" onclick="cerrarRangoFechas()" style="background:#9CA3AF;color:white">Cancelar</button>
+      <button class="btn btn-green" onclick="aplicarRangoFechas()">Aplicar</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
