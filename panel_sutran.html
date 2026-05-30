@@ -448,17 +448,7 @@ tr:hover td{background:rgba(79,142,247,0.03)}
     <div class="panel" id="p-biometrico">
       <div class="page-title">Registros Biometricos</div>
       <div class="page-sub">Cargar marcaciones del sistema biometrico</div>
-      <div class="card">
-        <div class="card-title">Agregar marcacion individual</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
-          <div class="form-field"><label>Trabajador</label><select id="bio-nombre" style="min-width:200px" onchange="autoFillDni()"><option value="">Selecciona...</option></select></div>
-          <div class="form-field"><label>DNI</label><input type="text" id="bio-dni" style="width:100px" placeholder="DNI"></div>
-          <div class="form-field"><label>Fecha</label><input type="date" id="bio-fecha"></div>
-          <div class="form-field"><label>Hora</label><input type="time" id="bio-hora"></div>
-          <div class="form-field"><label>Tipo</label><select id="bio-tipo"><option value="">Sin especificar</option><option>Entrada</option><option>Salida</option></select></div>
-          <button class="btn btn-green" onclick="agregarBiometrico()">+ Agregar</button>
-        </div>
-      </div>
+      
       <div class="card">
         <div class="card-title">Carga masiva desde Excel</div>
         <div style="font-size:12px;color:var(--text3);margin-bottom:8px">Copia y pega desde Excel: columnas Nombre | Fecha | Hora (una fila por l nea, separado por TAB)</div>
