@@ -21,20 +21,20 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .brand-name{font-size:13px;color:var(--text2)}
 .reloj{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text3)}
 .layout{display:flex;height:calc(100vh - 58px)}
-.sidebar{width:228px;background:linear-gradient(180deg,#1C2440 0%,#0B0F1E 100%);border-right:1px solid var(--border);padding:12px 0;flex-shrink:0;overflow-y:auto;display:flex;flex-direction:column}
+.sidebar{width:228px;background:var(--sidebar-bg);border-right:1px solid var(--sidebar-bg2);padding:12px 0;flex-shrink:0;overflow-y:auto;display:flex;flex-direction:column;color:var(--sidebar-text)}
 .main{flex:1;overflow-y:auto;padding:28px}
 .sidebar-label{padding:6px 16px;font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-top:12px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all 0.15s}
-.nav-item:hover{background:rgba(79,142,247,0.06);color:var(--text)}
-.nav-item.active{background:rgba(79,142,247,0.1);color:var(--blue);border-left-color:var(--blue);font-weight:500}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;font-size:13px;color:var(--sidebar-text2);border-left:2px solid transparent;transition:all 0.15s}
+.nav-item:hover{background:rgba(255,255,255,0.1);color:var(--sidebar-text)}
+.nav-item.active{background:rgba(255,255,255,0.15);color:var(--sidebar-text);border-left-color:#5B9BFF;font-weight:500}
 .nav-item svg{width:15px;height:15px;stroke:currentColor;fill:none;flex-shrink:0}
 .sidebar-bottom{margin-top:auto;padding:12px 16px;border-top:1px solid var(--border)}
 .mes-selector label{font-size:11px;color:var(--text3);font-weight:500;display:block;margin-bottom:4px}
-.mes-selector select{width:100%;font-size:12px;padding:6px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);height:32px;margin-bottom:4px}
+.mes-selector select{width:100%;font-size:12px;padding:6px 8px;background:white;border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);height:32px;margin-bottom:4px}
 .panel{display:none}.panel.active{display:block}
 .page-title{font-size:20px;font-weight:600;margin-bottom:4px;letter-spacing:-0.3px}
 .page-sub{font-size:13px;color:var(--text2);margin-bottom:24px}
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 4px 16px rgba(0,0,0,0.4);padding:20px;margin-bottom:16px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 2px 8px rgba(15,23,42,0.06);padding:20px;margin-bottom:16px}
 .card-title{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px}
 .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
 .stat{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;position:relative;overflow:hidden}
@@ -48,14 +48,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .stat.purple .stat-val{color:var(--purple)}.stat.cyan .stat-val{color:var(--cyan)}
 .stat-label{font-size:12px;color:var(--text3);margin-top:6px}
 .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
-.btn{font-family:'Inter',sans-serif;font-size:13px;padding:0 14px;height:36px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg3);color:var(--text);cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.15s;white-space:nowrap}
+.btn{font-family:'Inter',sans-serif;font-size:13px;padding:0 14px;height:36px;border:1px solid var(--border);border-radius:var(--r-sm);background:white;color:var(--text);cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.15s;white-space:nowrap}
 .btn:hover{background:var(--bg2);border-color:var(--text3)}
 .btn-primary{background:var(--blue2);border-color:var(--blue2);color:white;font-weight:500}
 .btn-primary:hover{background:#1D4ED8}
 .btn-green{background:#15803D;border-color:#15803D;color:white;font-weight:500}
 .btn-red{background:#991B1B;border-color:#991B1B;color:white;font-weight:500}
 .btn svg{width:14px;height:14px;stroke:currentColor;fill:none}
-input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);height:36px;transition:border-color 0.15s}
+input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;padding:8px 12px;background:white;border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);height:36px;transition:border-color 0.15s}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
 textarea{height:auto;resize:vertical}
 .table-wrap{overflow-x:auto;border-radius:var(--r);border:1px solid var(--border)}
@@ -160,10 +160,17 @@ tr:hover td{background:rgba(79,142,247,0.03)}
       <div class="stats-grid">
         <div class="stat blue"><div class="stat-val" id="s-personal"> </div><div class="stat-label">Personal registrado</div></div>
         <div class="stat green"><div class="stat-val" id="s-asist"> </div><div class="stat-label">Asistencias (A)</div></div>
-        <div class="stat red"><div class="stat-val" id="s-faltas"> </div><div class="stat-label">Faltas (F)</div></div>
-        <div class="stat cyan"><div class="stat-val" id="s-foto"> </div><div class="stat-label">Marcaciones foto</div></div>
-        <div class="stat purple"><div class="stat-val" id="s-bio"> </div><div class="stat-label">Marcaciones biometrico</div></div>
-        <div class="stat yellow"><div class="stat-val" id="s-ds"> </div><div class="stat-label">Descansos (DS)</div></div>
+        <div class="stat yellow" style="cursor:pointer" onclick="mostrarDetalle(\'tardanzas\')"><div class="stat-val" id="s-tard">0</div><div class="stat-label">Tardanzas del mes</div></div>
+        <div class="stat purple" style="cursor:pointer" onclick="mostrarDetalle(\'vacaciones\')"><div class="stat-val" id="s-vac">0</div><div class="stat-label">De vacaciones hoy</div></div>
+        <div class="stat cyan" style="cursor:pointer" onclick="mostrarDetalle(\'comision\')"><div class="stat-val" id="s-com">0</div><div class="stat-label">De comision hoy</div></div>
+        <div class="stat red" style="cursor:pointer" onclick="mostrarDetalle(\'sinmarcar\')"><div class="stat-val" id="s-sinm">0</div><div class="stat-label">Sin marcar hoy</div></div>
+      </div>
+      <div id="dash-detalle" style="display:none;margin-top:16px;padding:16px;background:white;border-radius:8px;border:1px solid #e5e7eb">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div id="dash-detalle-titulo" style="font-size:14px;font-weight:600;color:#1F3864"></div>
+          <button onclick="document.getElementById(\'dash-detalle\').style.display=\'none\'" style="background:none;border:none;cursor:pointer;font-size:18px;color:#6b7280">x</button>
+        </div>
+        <div id="dash-detalle-lista" style="font-size:13px"></div>
       </div>
       <div class="card">
         <div class="card-title"> ltimos registros</div>
@@ -651,42 +658,122 @@ function poblarSelectores(rows) {
 function cargarDashboard() {
   var mes = getMes(), anio = getAnio();
   var btn = document.getElementById('btn-actualizar-dash');
+  if (btn) btn.disabled = true;
   var estado = document.getElementById('dash-estado');
-  if (btn) { btn.disabled = true; btn.textContent = 'Actualizando...'; }
-  if (estado) { estado.textContent = 'Cargando datos...'; estado.style.color = 'var(--cyan)'; }
+  if (estado) estado.textContent = 'Cargando...';
 
-  fetchJSON(SCRIPT_URL + '?accion=dashboard&mes=' + mes + '&anio=' + anio).then(function(data) {
-    var s = data.stats || {};
-    document.getElementById('s-personal').textContent = s.personal || '0';
-    document.getElementById('s-asist').textContent = s.asistencias || '0';
-    document.getElementById('s-faltas').textContent = s.faltas || '0';
-    document.getElementById('s-foto').textContent = s.registros_foto || '0';
-    document.getElementById('s-bio').textContent = s.registros_bio || '0';
-    document.getElementById('s-ds').textContent = s.descansos || '0';
-    var ahora = new Date();
-    if (estado) { 
-      estado.textContent = 'Actualizado ' + String(ahora.getHours()).padStart(2,'0') + ':' + String(ahora.getMinutes()).padStart(2,'0');
-      estado.style.color = 'var(--green)';
-    }
-    if (btn) { btn.disabled = false; btn.textContent = 'Actualizar'; }
-    // Cargar ultimos registros
-    fetchJSON(SCRIPT_URL + '?accion=leerAsistencia&mes=' + mes + '&anio=' + anio).then(function(data2) {
-      var rows = (data2.asistencia || []).slice(-10).reverse();
-      var tbody = document.getElementById('dash-tabla');
-      if (!tbody) return;
-      if (rows.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="loading-cell">Sin registros</td></tr>'; return; }
-      tbody.innerHTML = '';
-      rows.forEach(function(r) {
-        var estado_color = r.estado==='A'?'green':r.estado==='F'?'red':r.estado==='DS'?'gray':'yellow';
-        var tr = document.createElement('tr');
-        tr.innerHTML = '<td>'+r.nombre+'</td><td>'+r.lugar+'</td><td>'+r.fecha+'</td><td>'+(r.h_inicio||'')+' - '+(r.h_fin||'')+'</td><td>'+(r.entrada||'')+'</td><td>'+(r.salida||'')+'</td><td><span class="badge '+estado_color+'">'+r.estado+'</span></td>';
-        tbody.appendChild(tr);
-      });
-    }).catch(function(){});
+  // Cargar personal
+  fetchJSON(SCRIPT_URL + '?accion=listarPersonal').then(function(dataP) {
+    document.getElementById('s-personal').textContent = (dataP.personal || []).length;
+    personalData = dataP.personal || [];
+
+    // Cargar asistencia del mes
+    return fetchJSON(SCRIPT_URL + '?accion=leerAsistencia&mes=' + mes + '&anio=' + anio);
+  }).then(function(data) {
+    var asist = data.asistencia || [];
+
+    // Contar asistencias
+    var asistencias = 0;
+    var tardanzaTrabajadores = {};
+    var totalMinTard = 0;
+
+    // Fecha de hoy
+    var hoy = new Date();
+    var diaHoy = hoy.getDate();
+    var mesHoy = hoy.getMonth() + 1;
+    var anioHoy = hoy.getFullYear();
+    var enMesActual = (parseInt(mes) === mesHoy && parseInt(anio) === anioHoy);
+    var fechaHoyFmt = String(diaHoy).padStart(2,'0') + '/' + String(mesHoy).padStart(2,'0') + '/' + anioHoy;
+
+    var vacacionesHoy = [];
+    var comisionHoy = [];
+    var trabConMarcaHoy = {};
+    var trabConProgHoy = {};
+
+    asist.forEach(function(r) {
+      var fechaR = r['Fecha'] || '';
+      var estadoR = r['Estado'] || '';
+      var nombreR = r['Nombre'] || '';
+      var entradaR = r['Entrada'] || '';
+      var inicioR = r['H. Inicio'] || r['HoraInicio'] || '';
+
+      if (estadoR === 'A' || estadoR === 'T') asistencias++;
+
+      // Tardanzas - calcular minutos
+      if (estadoR === 'T' && entradaR && inicioR) {
+        try {
+          var pe = entradaR.split(':'); var pi = inicioR.split(':');
+          var minE = parseInt(pe[0])*60 + parseInt(pe[1]);
+          var minI = parseInt(pi[0])*60 + parseInt(pi[1]);
+          var minT = Math.max(0, minE - minI);
+          if (minT > 0) {
+            if (!tardanzaTrabajadores[nombreR]) tardanzaTrabajadores[nombreR] = 0;
+            tardanzaTrabajadores[nombreR] += minT;
+            totalMinTard += minT;
+          }
+        } catch(e) {}
+      }
+
+      // Hoy
+      if (enMesActual && fechaR === fechaHoyFmt) {
+        trabConProgHoy[nombreR] = estadoR;
+        if (estadoR === 'V') vacacionesHoy.push(nombreR);
+        else if (estadoR === 'CO') comisionHoy.push(nombreR);
+        else if (estadoR === 'A' || estadoR === 'T') trabConMarcaHoy[nombreR] = true;
+      }
+    });
+
+    document.getElementById('s-asist').textContent = asistencias;
+
+    var numTard = Object.keys(tardanzaTrabajadores).length;
+    document.getElementById('s-tard').textContent = numTard + (totalMinTard > 0 ? ' / ' + totalMinTard + 'm' : '');
+
+    document.getElementById('s-vac').textContent = vacacionesHoy.length;
+    document.getElementById('s-com').textContent = comisionHoy.length;
+
+    // Sin marcar hoy: tienen programacion como PROGRAMADO/A/T pero no marcaron
+    var sinMarcar = [];
+    Object.keys(trabConProgHoy).forEach(function(n) {
+      var est = trabConProgHoy[n];
+      if (est === 'F') sinMarcar.push(n);
+    });
+    document.getElementById('s-sinm').textContent = sinMarcar.length;
+
+    // Guardar para mostrar detalle
+    window._dashDetalles = {
+      tardanzas: Object.keys(tardanzaTrabajadores).map(function(n) {
+        return n + ' (+' + tardanzaTrabajadores[n] + ' min)';
+      }),
+      vacaciones: vacacionesHoy,
+      comision: comisionHoy,
+      sinmarcar: sinMarcar
+    };
+
+    if (btn) btn.disabled = false;
+    if (estado) estado.textContent = 'Actualizado ' + new Date().toLocaleTimeString();
   }).catch(function(e) {
-    if (estado) { estado.textContent = 'Error al actualizar'; estado.style.color = 'var(--red)'; }
-    if (btn) { btn.disabled = false; btn.textContent = 'Actualizar'; }
+    if (btn) btn.disabled = false;
+    if (estado) estado.textContent = 'Error: ' + e.message;
   });
+}
+
+function mostrarDetalle(tipo) {
+  var titulos = {
+    tardanzas: 'Tardanzas del mes',
+    vacaciones: 'De vacaciones hoy',
+    comision: 'De comision hoy',
+    sinmarcar: 'Sin marcar hoy'
+  };
+  var lista = (window._dashDetalles || {})[tipo] || [];
+  document.getElementById('dash-detalle-titulo').textContent = titulos[tipo] + ' (' + lista.length + ')';
+  if (lista.length === 0) {
+    document.getElementById('dash-detalle-lista').innerHTML = '<div style="color:#9CA3AF;font-style:italic;text-align:center;padding:16px">Sin registros</div>';
+  } else {
+    document.getElementById('dash-detalle-lista').innerHTML = lista.map(function(n) {
+      return '<div style="padding:8px 12px;border-bottom:1px solid #f3f4f6">' + n + '</div>';
+    }).join('');
+  }
+  document.getElementById('dash-detalle').style.display = 'block';
 }
 
 // PROGRAMACI N
