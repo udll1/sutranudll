@@ -227,6 +227,7 @@ tr:hover td{background:rgba(79,142,247,0.03)}
               <input type="text" id="prog-add-obs" placeholder="Ej: Compensa 15/03/2026" style="height:34px;width:100%">
             </div>
             <button class="btn btn-green" onclick="agregarProgDia()" style="height:34px">+ Agregar</button>
+            <button class="btn" onclick="completarProgBase()" style="height:34px;background:#0EA5E9;color:white" title="Agrega los trabajadores faltantes con su horario base configurado">+ Completar dia</button>
           </div>
         </div>
       </div>
@@ -981,6 +982,21 @@ function descargarExcel(accion, btn) {
 }
 
 // PROGRAMACION POR DIA
+function completarProgBase() {
+  var fecha = document.getElementById('prog-fecha-filtro').value;
+  if (!fecha) { alert('Primero selecciona un dia'); return; }
+  var fp = fecha.split('-');
+  var fechaFmt = fp[2] + '/' + fp[1] + '/' + fp[0];
+  if (!confirm('Agregar trabajadores faltantes con su horario base configurado para el ' + fechaFmt + '?')) return;
+  fetchJSON(SCRIPT_URL + '?accion=completarProgramacionBase&fecha=' + encodeURIComponent(fechaFmt))
+    .then(function(data) {
+      if (data.status === 'ok') {
+        alert('Se agregaron ' + data.agregados + ' trabajadores con su horario base');
+        cargarProgDia();
+      } else alert('Error: ' + data.message);
+    });
+}
+
 function agregarProgDia() {
   var fecha = document.getElementById('prog-fecha-filtro').value;
   if (!fecha) { alert('Primero selecciona un dia'); return; }
@@ -1297,21 +1313,44 @@ function eliminarLugarPanel(lugar) {
 
 // PERSONAL
 function cargarTablaPersonal() {
-  document.getElementById('per-tabla').innerHTML = '<tr><td colspan="5" class="loading-cell">Cargando...</td></tr>';
+  document.getElementById('per-tabla').innerHTML = '<tr><td colspan="7" class="loading-cell">Cargando...</td></tr>';
   fetchJSON(SCRIPT_URL + '?accion=listarPersonal').then(function(data) {
     personalData = data.personal || [];
     poblarSelectores(personalData);
     document.getElementById('per-tabla').innerHTML = personalData.length === 0
-      ? '<tr><td colspan="5" class="loading-cell">Sin personal</td></tr>'
+      ? '<tr><td colspan="7" class="loading-cell">Sin personal</td></tr>'
       : personalData.map(function(p) {
+          var horario = (p.horario_inicio && p.horario_fin) ? (p.horario_inicio + ' - ' + p.horario_fin) : '<span style="color:var(--text3);font-style:italic">Sin configurar</span>';
+          var lugar = p.lugar_habitual || '<span style="color:var(--text3);font-style:italic">-</span>';
           return '<tr><td class="mono">' + p.nombre_sistema + '</td>' +
             '<td>' + (p.nombre_completo||' ') + '</td>' +
             '<td class="mono">' + (p.dni||' ') + '</td>' +
             '<td>' + (p.cargo||' ') + '</td>' +
-            '<td><button class="btn btn-red" style="height:28px;font-size:11px" data-nom="' + p.nombre_sistema + '" onclick="eliminarPersonal(this.getAttribute(\'data-nom\'))">Eliminar</button></td></tr>';
+            '<td style="font-size:11px">' + horario + '</td>' +
+            '<td style="font-size:11px">' + lugar + '</td>' +
+            '<td><button class="btn" style="height:24px;font-size:11px;padding:0 8px;background:#0EA5E9;color:white" onclick="abrirEditorHorarioBase(\'' + p.nombre_sistema + '\',\'' + (p.horario_inicio||'') + '\',\'' + (p.horario_fin||'') + '\',\'' + (p.lugar_habitual||'') + '\')">Horario</button></td></tr>';
         }).join('');
   }).catch(function(e) {
-    document.getElementById('per-tabla').innerHTML = '<tr><td colspan="5" class="loading-cell" style="color:var(--red)">Error: ' + e.message + '</td></tr>';
+    document.getElementById('per-tabla').innerHTML = '<tr><td colspan="7" class="loading-cell" style="color:var(--red)">Error: ' + e.message + '</td></tr>';
+  });
+}
+
+function abrirEditorHorarioBase(nombre, hi, hf, lugar) {
+  var nhi = prompt('Horario INICIO para ' + nombre + ' (HH:MM o vacio para quitar):', hi);
+  if (nhi === null) return;
+  var nhf = prompt('Horario FIN para ' + nombre + ':', hf);
+  if (nhf === null) return;
+  var nlugar = prompt('Lugar habitual:', lugar);
+  if (nlugar === null) return;
+  fetchJSON(SCRIPT_URL + '?accion=editarHorarioBase&nombre_sistema=' + encodeURIComponent(nombre) +
+    '&horario_inicio=' + encodeURIComponent(nhi.trim()) +
+    '&horario_fin=' + encodeURIComponent(nhf.trim()) +
+    '&lugar_habitual=' + encodeURIComponent(nlugar.trim())
+  ).then(function(data) {
+    if (data.status === 'ok') {
+      alert('Horario base actualizado');
+      cargarTablaPersonal();
+    } else alert('Error: ' + data.message);
   });
 }
 
