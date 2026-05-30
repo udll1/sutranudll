@@ -930,20 +930,52 @@ function cambiarPinAdmin() {
 function descargarExcel(accion, btn) {
   var mes = document.getElementById('g-mes').value;
   var anio = document.getElementById('g-anio').value;
-  var btn = event.currentTarget;
-  btn.textContent = 'Generando...';
-  btn.disabled = true;
-  fetchJSON(SCRIPT_URL + '?accion=' + accion + '&mes=' + mes + '&anio=' + anio).then(function(data) {
-    btn.disabled = false;
-    btn.innerHTML = '<svg viewBox="0 0 24 24" stroke-width="2" style="width:14px;height:14px;stroke:white;fill:none;display:inline-block;vertical-align:middle;margin-right:4px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Descargar Excel';
-    if (data.status === 'ok' && data.url) {
-      window.open(data.url, '_blank');
-    } else {
-      alert('Error al generar el archivo');
+  var bt = event.currentTarget;
+  var textoOrig = bt.textContent;
+  bt.textContent = 'Generando...';
+  bt.disabled = true;
+
+  var tipo = accion === 'generarExcelFirmas' ? 'firmas' :
+             accion === 'generarExcelTardanzas' ? 'tardanzas' :
+             accion === 'generarExcelDetalle' ? 'detalle' : 'mensual';
+  var meses = ["","ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
+  var mesNom = meses[parseInt(mes)];
+
+  var accionDatos = tipo === 'tardanzas' ? 'getDatosReporteTardanzas' :
+                    tipo === 'detalle' ? 'getDatosReporteDetalle' : 'getDatosReporte';
+
+  fetchJSON(SCRIPT_URL + '?accion=' + accionDatos + '&mes=' + mes + '&anio=' + anio).then(function(data) {
+    if (!data.trabajadores) {
+      bt.disabled = false; bt.textContent = textoOrig;
+      alert('Error al obtener datos'); return;
     }
+    var payload = {
+      tipo: tipo,
+      trabajadores: data.trabajadores,
+      dias_mes: new Date(parseInt(anio), parseInt(mes), 0).getDate(),
+      mes_nom: mesNom,
+      anio: parseInt(anio),
+      leyenda: data.leyenda || []
+    };
+    return fetch(EXCEL_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+  }).then(function(resp) {
+    if (!resp || !resp.ok) throw new Error('Error del servidor');
+    return resp.blob();
+  }).then(function(blob) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    var prefijos = {firmas:'Reporte_Firmas_', tardanzas:'Reporte_Tardanzas_', detalle:'Reporte_Detalle_'};
+    a.download = (prefijos[tipo] || 'Reporte_Asistencia_') + mesNom + '_' + anio + '.xlsx';
+    a.click();
+    URL.revokeObjectURL(url);
+    bt.disabled = false; bt.textContent = textoOrig;
   }).catch(function(e) {
-    btn.disabled = false;
-    btn.innerHTML = 'Descargar Excel';
+    bt.disabled = false; bt.textContent = textoOrig;
     alert('Error: ' + e.message);
   });
 }
