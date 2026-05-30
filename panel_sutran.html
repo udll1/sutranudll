@@ -1,1641 +1,2120 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SUTRAN UDLL - Panel de Asistencia</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#0B0F1E;--bg2:#141929;--bg3:#1C2440;--border:#2A3560;
-  --blue:#5B9BFF;--blue2:#2563EB;--green:#10D9A0;--red:#FF5B7A;
-  --yellow:#FFB830;--purple:#A78BFA;--cyan:#22D3EE;--orange:#FB923C;
-  --text:#EEF2FF;--text2:#8BA3CC;--text3:#4A6080;
-  --r:10px;--r-sm:6px;
-}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-.topbar{background:linear-gradient(90deg,#1C2440,#0B0F1E);border-bottom:1px solid #2A3560;padding:0 24px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
-.brand{display:flex;align-items:center;gap:10px}
-.brand-badge{background:var(--blue2);color:white;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;padding:4px 10px;border-radius:4px;letter-spacing:1px}
-.brand-name{font-size:13px;color:var(--text2)}
-.reloj{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text3)}
-.layout{display:flex;height:calc(100vh - 58px)}
-.sidebar{width:228px;background:linear-gradient(180deg,#1C2440 0%,#0B0F1E 100%);border-right:1px solid var(--border);padding:12px 0;flex-shrink:0;overflow-y:auto;display:flex;flex-direction:column}
-.main{flex:1;overflow-y:auto;padding:28px}
-.sidebar-label{padding:6px 16px;font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-top:12px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all 0.15s}
-.nav-item:hover{background:rgba(79,142,247,0.06);color:var(--text)}
-.nav-item.active{background:rgba(79,142,247,0.1);color:var(--blue);border-left-color:var(--blue);font-weight:500}
-.nav-item svg{width:15px;height:15px;stroke:currentColor;fill:none;flex-shrink:0}
-.sidebar-bottom{margin-top:auto;padding:12px 16px;border-top:1px solid var(--border)}
-.mes-selector label{font-size:11px;color:var(--text3);font-weight:500;display:block;margin-bottom:4px}
-.mes-selector select{width:100%;font-size:12px;padding:6px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);height:32px;margin-bottom:4px}
-.panel{display:none}.panel.active{display:block}
-.page-title{font-size:20px;font-weight:600;margin-bottom:4px;letter-spacing:-0.3px}
-.page-sub{font-size:13px;color:var(--text2);margin-bottom:24px}
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 4px 16px rgba(0,0,0,0.4);padding:20px;margin-bottom:16px}
-.card-title{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px}
-.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
-.stat{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;position:relative;overflow:hidden}
-.stat::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%}
-.stat.blue::before{background:var(--blue)}.stat.green::before{background:var(--green)}
-.stat.red::before{background:var(--red)}.stat.yellow::before{background:var(--yellow)}
-.stat.purple::before{background:var(--purple)}.stat.cyan::before{background:var(--cyan)}
-.stat-val{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:600}
-.stat.blue .stat-val{color:var(--blue)}.stat.green .stat-val{color:var(--green)}
-.stat.red .stat-val{color:var(--red)}.stat.yellow .stat-val{color:var(--yellow)}
-.stat.purple .stat-val{color:var(--purple)}.stat.cyan .stat-val{color:var(--cyan)}
-.stat-label{font-size:12px;color:var(--text3);margin-top:6px}
-.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
-.btn{font-family:'Inter',sans-serif;font-size:13px;padding:0 14px;height:36px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg3);color:var(--text);cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.15s;white-space:nowrap}
-.btn:hover{background:var(--bg2);border-color:var(--text3)}
-.btn-primary{background:var(--blue2);border-color:var(--blue2);color:white;font-weight:500}
-.btn-primary:hover{background:#1D4ED8}
-.btn-green{background:#15803D;border-color:#15803D;color:white;font-weight:500}
-.btn-red{background:#991B1B;border-color:#991B1B;color:white;font-weight:500}
-.btn svg{width:14px;height:14px;stroke:currentColor;fill:none}
-input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);height:36px;transition:border-color 0.15s}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
-textarea{height:auto;resize:vertical}
-.table-wrap{overflow-x:auto;border-radius:var(--r);border:1px solid var(--border)}
-table{width:100%;border-collapse:collapse;font-size:12.5px}
-th{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:0.8px;color:var(--text3);padding:10px 12px;text-align:left;background:var(--bg3);border-bottom:1px solid var(--border);white-space:nowrap;text-transform:uppercase}
-td{padding:9px 12px;border-bottom:1px solid rgba(45,50,80,0.6);color:var(--text);vertical-align:middle}
-tr:last-child td{border-bottom:none}
-tr:hover td{background:rgba(79,142,247,0.03)}
-.mono{font-family:'JetBrains Mono',monospace;font-size:12px}
-.badge{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:500;display:inline-block}
-.b-A{background:#14532D;color:#86EFAC}.b-DS{background:#1E3A5F;color:#93C5FD}
-.b-CP{background:#78350F;color:#FCD34D}.b-V{background:#4C1D95;color:#C4B5FD}
-.b-FE,.b-FR{background:#7F1D1D;color:#FCA5A5}.b-CO{background:#0C4A6E;color:#7DD3FC}
-.b-T{background:#451A03;color:#FDE68A}.b-F{background:#7F1D1D;color:#FCA5A5}
-.b-REVISION{background:#374151;color:#F87171}.b-PROGRAMADO{background:#1E3A5F;color:#93C5FD}
-.estado-bar{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0;animation:pulse 2s infinite}
-.dot.ok{background:var(--green);animation:none}.dot.err{background:var(--red);animation:none}.dot.loading{background:var(--yellow)}
-.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.form-field label{font-size:11px;color:var(--text3);display:block;margin-bottom:4px;font-weight:500}
-.form-field input,.form-field select{width:100%}
-.rep-wrap{overflow-x:auto}
-.rep-table{border-collapse:collapse;font-size:11px;white-space:nowrap}
-.rep-table th{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text3);padding:6px 4px;text-align:center;background:var(--bg3);border:1px solid var(--border);min-width:26px}
-.rep-table th.lname{text-align:left;min-width:160px}
-.rep-table td{padding:4px 3px;border:1px solid rgba(45,50,80,0.5);text-align:center}
-.rep-table td.lname{text-align:left;padding:4px 8px;font-size:12px}
-.loading-cell{text-align:center;padding:32px;color:var(--text3);font-size:13px}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-@media print{.topbar,.sidebar,.btn-row,.no-print{display:none!important}.layout{height:auto;display:block}.main{padding:0}body{background:white;color:black}.card{border:none;background:white}}
-</style>
-</head>
-<body>
-<div class="topbar">
-  <div class="brand">
-    <div class="brand-badge">SUTRAN</div>
-    <div class="brand-name">Unidad Desconcentrada La Libertad   Control de Asistencia</div>
-  </div>
-  <div class="reloj" id="reloj"></div>
-</div>
-<div class="layout">
-  <div class="sidebar">
-    <div class="sidebar-label">Principal</div>
-    <div class="nav-item active" onclick="nav('dashboard',this)">
-      <svg viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard
-    </div>
-    <div class="nav-item" onclick="nav('programacion',this)">
-      <svg viewBox="0 0 24 24" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Programacion
-    </div>
-    <div class="sidebar-label">Reportes</div>
-    <div class="nav-item" onclick="nav('asistencia',this)">
-      <svg viewBox="0 0 24 24" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Asistencia Final
-    </div>
-    <div class="nav-item" onclick="nav('mensual',this)">
-      <svg viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Reporte Mensual
-    </div>
-    <div class="nav-item" onclick="nav('imprimir',this)">
-      <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Reporte para Firmas
-    </div>
-    <div class="nav-item" onclick="nav('consulta',this)">
-      <svg viewBox="0 0 24 24" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Consulta Trabajador
-    </div>
-    <div class="sidebar-label">Procesos</div>
-    <div class="nav-item" onclick="nav('procesos',this)">
-      <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>Ejecutar Procesos
-    </div>
-    <div class="sidebar-label">Gestion</div>
-    <div class="nav-item" onclick="nav('regmanual',this)">
-      <svg viewBox="0 0 24 24" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-      Registro Manual
-    </div>
-    <div class="nav-item" onclick="nav('personal',this)">
-      <svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Configuracion
-    </div>
-    <div class="nav-item" onclick="nav('biometrico',this)">
-      <svg viewBox="0 0 24 24" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Biometrico
-    </div>
+// ================================================
+// CONTROL DE ASISTENCIA - SUTRAN UDLL
+// doGet agregado para panel web
+// ================================================
 
-    <div class="sidebar-bottom">
-      <div class="mes-selector">
-        <label>Mes activo</label>
-        <select id="g-mes">
-          <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
-          <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
-          <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
-          <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
-        </select>
-        <select id="g-anio"><option value="2027">2027</option><option value="2026" selected>2026</option><option value="2025">2025</option><option value="2024">2024</option></select>
-      </div>
-    </div>
-  </div>
-  <div class="main">
+const SHEET_ID           = "1qT1seHGPVjWxl5KOR4vc0Q99Ja-pnJjwEFgHOnWy4x8";
+const FOLDER_ID          = "1CouRvMQ0p2UkTe_C-yeYYFHjqgESN2yR";
+const HOJA_REGISTROS     = "REGISTROS";
+const HOJA_PERSONAL      = "PERSONAL";
+const HOJA_BIOMETRICO    = "BIOMETRICO";
+const HOJA_NOMENCLATURAS = "ResumenAsistencia";
+const HOJA_LUGARES       = "LUGARES";
+const HOJA_PROGRAMACION  = "PROGRAMACION";
+const HOJA_PROG_RAW      = "PROGRAMACION_RAW";
+const HOJA_ASISTENCIA    = "ASISTENCIA_FINAL";
+const HOJA_REP_MENSUAL   = "REPORTE_MENSUAL";
+const HOJA_REP_IMPRIMIR  = "REPORTE_IMPRIMIR";
 
-    <!-- DASHBOARD -->
-    <div class="panel active" id="p-dashboard">
-      <div class="page-title">Dashboard</div>
-      <div class="page-sub">Resumen general del mes seleccionado</div>
-      <div class="btn-row no-print">
-        <button class="btn btn-primary" id="btn-actualizar-dash" onclick="cargarDashboard()"><svg viewBox="0 0 24 24" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>Actualizar</button>
-        <span id="dash-estado" style="font-size:12px;color:var(--text3);margin-left:8px"></span>
-      </div>
-      <div class="stats-grid">
-        <div class="stat blue"><div class="stat-val" id="s-personal"> </div><div class="stat-label">Personal registrado</div></div>
-        <div class="stat green"><div class="stat-val" id="s-asist"> </div><div class="stat-label">Asistencias (A)</div></div>
-        <div class="stat red"><div class="stat-val" id="s-faltas"> </div><div class="stat-label">Faltas (F)</div></div>
-        <div class="stat cyan"><div class="stat-val" id="s-foto"> </div><div class="stat-label">Marcaciones foto</div></div>
-        <div class="stat purple"><div class="stat-val" id="s-bio"> </div><div class="stat-label">Marcaciones biometrico</div></div>
-        <div class="stat yellow"><div class="stat-val" id="s-ds"> </div><div class="stat-label">Descansos (DS)</div></div>
-      </div>
-      <div class="card">
-        <div class="card-title"> ltimos registros</div>
-        <div class="table-wrap">
-          <table><thead><tr><th>Nombre</th><th>Lugar</th><th>Fecha</th><th>H.Prog</th><th>Entrada</th><th>Salida</th><th>Estado</th></tr></thead>
-          <tbody id="dash-tabla"><tr><td colspan="7" class="loading-cell">Haz clic en Actualizar</td></tr></tbody></table>
-        </div>
-      </div>
-    </div>
+function doGet(e) {
+  const p = e.parameter || {};
+  const accion = p.accion || "";
+  const callback = p.callback || "";
 
-    <!-- PROGRAMACI N -->
-    <div class="panel" id="p-programacion">
-      <div class="page-title">Programacion</div>
-      <div class="page-sub">Pega el mensaje de WhatsApp y procesalo</div>
-      <div class="estado-bar" id="prog-estado"><div class="dot"></div>Listo</div>
-      <div class="card">
-        <div class="card-title">Mensaje de WhatsApp</div>
-        <textarea id="prog-texto" style="width:100%;min-height:200px;font-family:monospace;font-size:12px" placeholder="Pega aqui el mensaje de programacion..." oninput="var v=this.value.trim()!=='';document.getElementById('btn-guardar-prog').disabled=!v;document.getElementById('btn-proc-prog').disabled=!v;"></textarea>
-        <div class="btn-row" style="margin-top:12px;margin-bottom:0">
-          <button id="btn-guardar-prog" class="btn btn-primary" onclick="guardarYProcesar()" disabled><svg viewBox="0 0 24 24" stroke-width="2"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>Guardar y Procesar</button>
-          <button class="btn" onclick="cargarProgRaw()"><svg viewBox="0 0 24 24" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>Cargar actual</button>
-        </div>
-      </div>
-      <div class="card" style="margin-top:16px">
-        <div class="card-title">Editar programacion por dia</div>
-        <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:16px">
-          <div class="form-field">
-            <label>Selecciona el dia</label>
-            <input type="date" id="prog-fecha-filtro" style="height:36px">
-          </div>
-          <button class="btn btn-primary" onclick="cargarProgDia()">Ver programacion</button>
-          <button class="btn btn-red" onclick="limpiarProgDia()">Limpiar dia</button>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Nombre</th><th>Lugar</th><th>H.Ini</th><th>H.Fin</th><th>Estado</th><th>Observacion</th><th></th></tr></thead>
-            <tbody id="prog-dia-tabla"><tr><td colspan="6" class="loading-cell">Selecciona un dia</td></tr></tbody>
-          </table>
-        </div>
-        <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:16px">
-          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--text3);margin-bottom:10px">Agregar trabajador al dia seleccionado</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:8px;align-items:flex-end">
-            <div class="form-field">
-              <label>Trabajador</label>
-              <select id="prog-add-nombre" style="height:34px;width:100%"><option value="">Selecciona...</option></select>
-            </div>
-            <div class="form-field">
-              <label>Lugar</label>
-              <select id="prog-add-lugar" style="height:34px;width:100%"><option value="">Selecciona...</option></select>
-            </div>
-            <div class="form-field">
-              <label>H. Inicio</label>
-              <input type="text" id="prog-add-inicio" placeholder="08:00" style="height:34px;width:100%;font-family:monospace">
-            </div>
-            <div class="form-field">
-              <label>H. Fin</label>
-              <input type="text" id="prog-add-fin" placeholder="17:00" style="height:34px;width:100%;font-family:monospace">
-            </div>
-            <div class="form-field">
-              <label>Observacion</label>
-              <input type="text" id="prog-add-obs" placeholder="Ej: Compensa 15/03/2026" style="height:34px;width:100%">
-            </div>
-            <button class="btn btn-green" onclick="agregarProgDia()" style="height:34px">+ Agregar</button>
-            <button class="btn" onclick="completarProgBase()" style="height:34px;background:#0EA5E9;color:white" title="Agrega los trabajadores faltantes con su horario base configurado">+ Completar dia</button>
-          </div>
-        </div>
-      </div>
-    </div>
+  try {
+    // ── EJECUTAR FUNCIONES PRINCIPALES ──
+    if (accion === "procesarProgramacion") {
+      procesarProgramacion();
+      return resp({ status: "ok", message: "Programación procesada" }, callback);
+    }
 
-    <!-- ASISTENCIA FINAL -->
-    <div class="panel" id="p-asistencia">
-      <div class="page-title">Asistencia Final</div>
-      <div class="page-sub">Resultado del cruce de programacion + marcaciones</div>
-      <div class="btn-row no-print">
-        <button class="btn btn-primary" onclick="cargarAsistencia()"><svg viewBox="0 0 24 24" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>Cargar</button>
-        <button class="btn" onclick="window.print()"><svg viewBox="0 0 24 24" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimir</button>
-      </div>
-      <div class="card">
-        <div class="table-wrap">
-          <table><thead><tr><th>#</th><th>Nombre</th><th>Lugar</th><th>Fecha</th><th>H.Prog</th><th>Entrada</th><th>Salida</th><th>Estado</th></tr></thead>
-          <tbody id="asist-tabla"><tr><td colspan="8" class="loading-cell">Carga los datos</td></tr></tbody></table>
-        </div>
-      </div>
-    </div>
+    if (accion === "unificarMarcaciones") {
+      unificarMarcaciones();
+      return resp({ status: "ok", message: "Marcaciones unificadas" }, callback);
+    }
 
-    <!-- REPORTE MENSUAL -->
-    <div class="panel" id="p-mensual">
-      <div class="page-title">Reporte Mensual</div>
-      <div class="page-sub">Vista calendario por trabajador</div>
-      <div class="btn-row no-print">
-        <button class="btn btn-primary" onclick="cargarMensual()">Cargar reporte</button>
-        <button class="btn btn-green" onclick="descargarExcel('generarExcelMensual',this)">Descargar Excel</button>
-        <button class="btn btn-green" onclick="descargarExcel('generarExcelTardanzas',this)" style="background:var(--orange)">Tardanzas</button>
-        <button class="btn btn-green" onclick="descargarExcel('generarExcelDetalle',this)" style="background:var(--purple)">Detalle</button>
-        <button class="btn" onclick="window.print()">Imprimir</button>
-      </div>
-      <div class="card" style="padding:12px">
-        <div class="rep-wrap" id="mensual-contenido"><div class="loading-cell">Carga el reporte</div></div>
-      </div>
-    </div>
+    if (accion === "generarAsistenciaFinal") {
+      const mes = parseInt(p.mes || new Date().getMonth() + 1);
+      const anio = parseInt(p.anio || new Date().getFullYear());
+      generarAsistenciaFinal(mes, anio);
+      return resp({ status: "ok", message: "Asistencia final generada - " + mes + "/" + anio }, callback);
+    }
 
-    <!-- REPORTE IMPRIMIR -->
-    <div class="panel" id="p-imprimir">
-      <div class="page-title">Reporte para Firmas</div>
-      <div class="page-sub">Reporte final para impresion y firma</div>
-      <div class="btn-row no-print">
-        <button class="btn btn-primary" onclick="cargarImprimir()">Cargar reporte</button>
-        <button class="btn btn-green" id="btn-excel-firmas" onclick="descargarExcel('generarExcelFirmas',this)">Descargar Excel</button>
-        <button class="btn" onclick="window.print()">Imprimir</button>
-      </div>
-      <div class="card" style="padding:12px">
-        <div class="rep-wrap" id="imprimir-contenido"><div class="loading-cell">Carga el reporte</div></div>
-      </div>
-    </div>
+    if (accion === "generarReporteMensual") {
+      const mes = parseInt(p.mes || new Date().getMonth() + 1);
+      const anio = parseInt(p.anio || new Date().getFullYear());
+      generarReporteMensual(mes, anio);
+      return resp({ status: "ok", message: "Reporte mensual generado - " + mes + "/" + anio }, callback);
+    }
 
-    <!-- CONSULTA -->
-    <div class="panel" id="p-consulta">
-      <div class="page-title">Consulta por Trabajador</div>
-      <div class="page-sub">Historial de asistencia individual con fotos</div>
-      <div class="card">
-        <div class="card-title">Filtros</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
-          <div class="form-field"><label>Trabajador</label><select id="con-trab" style="min-width:220px"><option value="">Todos</option></select></div>
-          <div class="form-field"><label>Fecha (opcional)</label><input type="date" id="con-fecha"></div>
-          <button class="btn btn-primary" onclick="cargarConsulta()">Consultar</button>
-        </div>
-      </div>
-      <div id="con-stats-wrap" style="display:none;margin-bottom:16px">
-        <div id="con-stats-grid" style="display:flex;gap:8px;flex-wrap:wrap"></div>
-      </div>
-      <div class="card">
-        <div class="table-wrap">
-          <table><thead><tr><th>Nombre</th><th>Lugar</th><th>Fecha</th><th>Horario</th><th>Entrada</th><th>Salida</th><th>Estado</th></tr></thead>
-          <tbody id="con-tabla"><tr><td colspan="7" class="loading-cell">Selecciona y consulta</td></tr></tbody></table>
-        </div>
-      </div>
-      <div id="con-detalle"></div>
-    </div>
+    if (accion === "generarReporteImprimir") {
+      const mes = parseInt(p.mes || new Date().getMonth() + 1);
+      const anio = parseInt(p.anio || new Date().getFullYear());
+      generarReporteImprimir(mes, anio);
+      return resp({ status: "ok", message: "Reporte para imprimir generado - " + mes + "/" + anio }, callback);
+    }
 
-    <!-- PROCESOS -->
-    <div class="panel" id="p-procesos">
-      <div class="page-title">Ejecutar Procesos</div>
-      <div class="page-sub">Ejecuta los procesos del sistema en orden</div>
-      <div class="estado-bar" id="proc-estado"><div class="dot"></div>Listo</div>
-      <div class="card">
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:var(--bg3);border-radius:var(--r-sm);border:1px solid var(--border)">
-            <div><div style="font-size:13px;font-weight:500">1. Procesar Programacion</div><div style="font-size:11px;color:var(--text3)">Interpreta el mensaje de WhatsApp</div></div>
-            <button id="btn-proc-prog" class="btn btn-primary" onclick="ejecutar('procesarProgramacion','proc-estado')" disabled>Ejecutar</button>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:var(--bg3);border-radius:var(--r-sm);border:1px solid var(--border)">
-            <div><div style="font-size:13px;font-weight:500">2. Unificar Marcaciones</div><div style="font-size:11px;color:var(--text3)">Combina foto + biometrico</div></div>
-            <button class="btn btn-primary" onclick="ejecutar('unificarMarcaciones','proc-estado')">Ejecutar</button>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:var(--bg3);border-radius:var(--r-sm);border:1px solid var(--border)">
-            <div><div style="font-size:13px;font-weight:500">3. Generar Asistencia Final</div><div style="font-size:11px;color:var(--text3)">Cruza programacion con marcaciones</div></div>
-            <button class="btn btn-primary" onclick="ejecutar('generarAsistenciaFinal','proc-estado')">Ejecutar</button>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:var(--bg3);border-radius:var(--r-sm);border:1px solid var(--border)">
-            <div><div style="font-size:13px;font-weight:500">4. Generar Reporte Mensual</div><div style="font-size:11px;color:var(--text3)">Genera hoja REPORTE_MENSUAL</div></div>
-            <button class="btn btn-primary" onclick="ejecutar('generarReporteMensual','proc-estado')">Ejecutar</button>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:var(--bg3);border-radius:var(--r-sm);border:1px solid var(--border)">
-            <div><div style="font-size:13px;font-weight:500">5. Generar Reporte para Imprimir</div><div style="font-size:11px;color:var(--text3)">Genera hoja REPORTE_IMPRIMIR</div></div>
-            <button class="btn btn-primary" onclick="ejecutar('generarReporteImprimir','proc-estado')">Ejecutar</button>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:var(--bg3);border-radius:var(--r-sm);border:1px solid var(--border);margin-top:8px">
-            <div><div style="font-size:13px;font-weight:500">6. Corregir nombres en Programacion</div><div style="font-size:11px;color:var(--text3)">Elimina tildes y corrige mayusculas en nombres</div></div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <button class="btn" style="background:var(--yellow);color:#000" onclick="ejecutar('unificarNombresProg','proc6-estado')">Ejecutar</button>
-              <span id="proc6-estado" style="font-size:12px"></span>
-            </div>
-          </div>
-          <button class="btn btn-green" style="height:44px;font-size:14px" onclick="ejecutarTodo()">  Ejecutar Todo en Secuencia</button>
-        </div>
-      </div>
-    </div>
+    // ── LEER DATOS PARA EL PANEL ──
 
-    <!-- REGISTRO MANUAL -->
-    <div class="panel" id="p-regmanual">
-      <div class="page-header">
-        <div class="page-title">Registro Manual</div>
-        <div class="page-sub">Subsanar marcaciones olvidadas o no registradas</div>
-      </div>
-      <div class="card">
-        <div class="card-title">Nuevo registro manual</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-          <div class="form-field">
-            <label>Trabajador</label>
-            <select id="rm-trabajador" style="height:36px;width:100%"><option value="">Cargando...</option></select>
-          </div>
-          <div class="form-field">
-            <label>Lugar</label>
-            <select id="rm-lugar" style="height:36px;width:100%"><option value="">Cargando...</option></select>
-          </div>
-          <div class="form-field">
-            <label>Fecha</label>
-            <input type="date" id="rm-fecha" style="height:36px;width:100%">
-          </div>
-          <div class="form-field">
-            <label>Hora</label>
-            <input type="time" id="rm-hora" style="height:36px;width:100%">
-          </div>
-          <div class="form-field">
-            <label>Tipo</label>
-            <select id="rm-tipo" style="height:36px;width:100%">
-              <option value="Inicio de turno">Inicio de turno</option>
-              <option value="Fin de turno">Fin de turno</option>
-            </select>
-          </div>
-          <div class="form-field">
-            <label>Observacion</label>
-            <input type="text" id="rm-obs" placeholder="Motivo del registro manual" style="height:36px;width:100%">
-          </div>
-        </div>
-        <div style="margin-top:16px;display:flex;gap:10px;align-items:center">
-          <button class="btn btn-primary" onclick="guardarRegistroManual()">Guardar Registro</button>
-          <span id="rm-estado" style="font-size:13px"></span>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">Registros manuales del mes</div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Trabajador</th><th>Lugar</th><th>Fecha</th><th>Hora</th><th>Tipo</th><th>Observacion</th><th>Accion</th></tr></thead>
-            <tbody id="rm-tabla"><tr><td colspan="7" class="loading-cell">Cargando...</td></tr></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- PERSONAL -->
-    <div class="panel" id="p-personal">
-      <div class="page-title">Gestion de Personal</div>
-      <div class="page-sub">Administra trabajadores, lugares y PINs del sistema</div>
-      <div class="card">
-        <div class="card-title">Agregar nuevo trabajador</div>
-        <div class="form-grid">
-          <div class="form-field"><label>Nombre sistema (corto)</label><input type="text" id="per-sistema" placeholder="Ej: Abner"></div>
-          <div class="form-field"><label>Nombre completo</label><input type="text" id="per-completo" placeholder="Ej: Abner Leon Pichen"></div>
-          <div class="form-field"><label>DNI</label><input type="text" id="per-dni" placeholder="Ej: 42563290"></div>
-          <div class="form-field"><label>Cargo</label><input type="text" id="per-cargo" placeholder="Ej: Inspector"></div>
-        </div>
-        <button class="btn btn-green" style="margin-top:12px" onclick="agregarPersonal()">+ Agregar trabajador</button>
-      </div>
-      <div class="card">
-        <div class="card-title">Lista de personal</div>
-        <div class="table-wrap">
-          <table><thead><tr><th>Nombre sistema</th><th>Nombre completo</th><th>DNI</th><th>Cargo</th><th>Accion</th></tr></thead>
-          <tbody id="per-tabla"><tr><td colspan="5" class="loading-cell">Cargando...</td></tr></tbody></table>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Agregar lugar de servicio</div>
-        <div style="display:flex;gap:10px;align-items:flex-end">
-          <div class="form-field" style="flex:1"><label>Nombre del lugar</label><input type="text" id="lug-nuevo" placeholder="Ej: Chicama" style="width:100%"></div>
-          <button class="btn btn-green" onclick="agregarLugarPanel()">+ Agregar</button>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">Lista de lugares</div>
-        <div class="table-wrap">
-          <table><thead><tr><th>Lugar</th><th>Accion</th></tr></thead>
-          <tbody id="lug-tabla"><tr><td colspan="2" class="loading-cell">Cargando...</td></tr></tbody></table>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">PIN de acceso</div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:12px">PIN para ingresar al formulario de registro de fotos</div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <input type="password" id="pin-acceso-new" placeholder="Nuevo PIN" maxlength="10" style="width:150px;font-family:monospace">
-          <button class="btn btn-primary" onclick="cambiarPinAcceso()">Cambiar PIN</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- BIOM TRICO -->
-    <div class="panel" id="p-biometrico">
-      <div class="page-title">Registros Biometricos</div>
-      <div class="page-sub">Cargar marcaciones del sistema biometrico</div>
-      <div class="card">
-        <div class="card-title">Agregar marcacion individual</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
-          <div class="form-field"><label>Trabajador</label><select id="bio-nombre" style="min-width:200px" onchange="autoFillDni()"><option value="">Selecciona...</option></select></div>
-          <div class="form-field"><label>DNI</label><input type="text" id="bio-dni" style="width:100px" placeholder="DNI"></div>
-          <div class="form-field"><label>Fecha</label><input type="date" id="bio-fecha"></div>
-          <div class="form-field"><label>Hora</label><input type="time" id="bio-hora"></div>
-          <div class="form-field"><label>Tipo</label><select id="bio-tipo"><option value="">Sin especificar</option><option>Entrada</option><option>Salida</option></select></div>
-          <button class="btn btn-green" onclick="agregarBiometrico()">+ Agregar</button>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">Carga masiva desde Excel</div>
-        <div style="font-size:12px;color:var(--text3);margin-bottom:8px">Copia y pega desde Excel: columnas Nombre | Fecha | Hora (una fila por l nea, separado por TAB)</div>
-        <textarea id="bio-masivo" style="width:100%;height:100px;font-family:monospace;font-size:11px" placeholder="18098607&#9;Joe Tejada Rios&#9;1/04/2026 07:00:59&#9;Entrada"></textarea>
-        <button class="btn btn-primary" style="margin-top:8px" onclick="cargarBiometricoMasivo()">Cargar desde pegado</button>
-      </div>
-      <div class="card">
-        <div class="card-title">Registros cargados</div>
-        <div class="btn-row"><button class="btn btn-primary" onclick="cargarTablaBio()">Actualizar lista</button></div>
-        <div class="table-wrap">
-          <table><thead><tr><th>Fila</th><th>DNI</th><th>Nombre</th><th>Fecha</th><th>Hora</th><th>Tipo</th><th>Accion</th></tr></thead>
-          <tbody id="bio-tabla"><tr><td colspan="7" class="loading-cell">Haz clic en Actualizar</td></tr></tbody></table>
-        </div>
-      </div>
-    </div>
-
-      </div>
-</div>
-
-<script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzW2KkDc8Rl3yUxA43Dji7fO-gqugqLsl4LdUvEs78sgIZ-DlZu_H342LEvrcsg2Rrh/exec";
-const EXCEL_URL = "https://sutran-excel.onrender.com/excel";
-const MESES = ["","Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-let personalData = [];
-let progData = [];
-
-// NAV
-function nav(id, el) {
-  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
-  document.querySelectorAll('.nav-item').forEach(function(i){i.classList.remove('active');});
-  document.getElementById('p-' + id).classList.add('active');
-  el.classList.add('active');
-  if (id === 'personal') { cargarTablaPersonal(); cargarTablaLugares(); }
-  if (id === 'regmanual') cargarRegistroManual();
-  if (id === 'biometrico') {
-    cargarTablaBio();
-    // Cargar select de trabajadores con DNI
-    fetchJSON(SCRIPT_URL + '?accion=listarPersonal').then(function(data) {
-      var sel = document.getElementById('bio-nombre');
-      if (!sel) return;
-      sel.innerHTML = '<option value="">Selecciona...</option>';
-      (data.personal||[]).forEach(function(p) {
-        var op = document.createElement('option');
-        op.value = p.nombre_sistema;
-        op.textContent = p.nombre_sistema;
-        if (p.dni) op.setAttribute('data-dni', p.dni);
-        sel.appendChild(op);
-      });
-    });
-  }
-  if (id === 'programacion') {
-    // Cargar estados desde LEYENDA
-    fetchJSON(SCRIPT_URL + '?accion=listarEstados').then(function(data) {
-      if (data.estados && data.estados.length > 0) {
-        window._estadosCache = ['PROGRAMADO','REVISION'].concat(data.estados);
-      }
-    });
-    // Cargar selects de agregar trabajador por dia
-    fetchJSON(SCRIPT_URL + '?accion=listarPersonal').then(function(data) {
-      var sel = document.getElementById('prog-add-nombre');
-      if (sel) {
-        sel.innerHTML = '<option value="">Selecciona...</option>';
-        (data.personal||[]).forEach(function(p) {
-          var op = document.createElement('option');
-          op.value = p.nombre_sistema; op.textContent = p.nombre_sistema;
-          sel.appendChild(op);
+    // Listar personal
+    if (accion === "listarPersonal") {
+      const ss = SpreadsheetApp.openById(SHEET_ID);
+      const hoja = ss.getSheetByName("PERSONAL");
+      const datos = hoja.getDataRange().getValues();
+      const personal = [];
+      for (let i = 1; i < datos.length; i++) {
+        if (!datos[i][0]) continue;
+        personal.push({
+          nombre_sistema: String(datos[i][0]),
+          nombre_completo: String(datos[i][1]),
+          dni: String(datos[i][2]),
+          cargo: String(datos[i][3]),
+          correo: String(datos[i][4] || ""),
+          horario_inicio: datos[i][5] ? formatHora(datos[i][5]) : "",
+          horario_fin: datos[i][6] ? formatHora(datos[i][6]) : "",
+          lugar_habitual: String(datos[i][7] || ""),
+          dias_trabajo: String(datos[i][8] || "")
         });
       }
-    });
-    fetchJSON(SCRIPT_URL + '?accion=listarLugares').then(function(data) {
-      var sel = document.getElementById('prog-add-lugar');
-      if (sel) {
-        sel.innerHTML = '<option value="">Sin lugar</option>';
-        (data.lugares||[]).forEach(function(l) {
-          var op = document.createElement('option');
-          op.value = l; op.textContent = l;
-          sel.appendChild(op);
-        });
-      }
-    });
-  }
-  if (id === 'editprog') {
-    // Cargar lugares al cache y poblar select del formulario
-    fetchJSON(SCRIPT_URL + '?accion=listarLugares').then(function(data) {
-      window._lugaresCache = data.lugares || [];
-      var sel = document.getElementById('ep-lugar');
-      if (sel) {
-        sel.innerHTML = '<option value="">Sin lugar</option>';
-        (data.lugares||[]).forEach(function(l){
-          var op = document.createElement('option');
-          op.value = l; op.textContent = l;
-          sel.appendChild(op);
-        });
-      }
-    });
-  }
-}
+      return resp({ status: "ok", personal }, callback);
+    }
 
-// JSONP fetch
-function fetchPOST(url, datos) {
-  return new Promise(function(resolve, reject) {
-    var form = new FormData();
-    form.append('datos', datos);
-    fetch(url, { method: 'POST', body: form })
-      .then(function(r) { return r.text(); })
-      .then(function(text) {
-        try { resolve(JSON.parse(text)); }
-        catch(e) { 
-          // Intentar extraer JSON del callback JSONP
-          var m = text.match(/\{.*\}/s);
-          if (m) resolve(JSON.parse(m[0]));
-          else reject(new Error('Respuesta invalida'));
+    // Editar horario base de trabajador
+    if (accion === "editarHorarioBase") {
+      const ss = SpreadsheetApp.openById(SHEET_ID);
+      const hoja = ss.getSheetByName("PERSONAL");
+      const nombre = decodeURIComponent(p.nombre_sistema || "").trim().toLowerCase();
+      const inicio = decodeURIComponent(p.horario_inicio || "");
+      const fin = decodeURIComponent(p.horario_fin || "");
+      const lugar = decodeURIComponent(p.lugar_habitual || "");
+      const dias = decodeURIComponent(p.dias_trabajo || "");
+      const datos = hoja.getDataRange().getValues();
+      for (let i = 1; i < datos.length; i++) {
+        if (String(datos[i][0]).trim().toLowerCase() === nombre) {
+          hoja.getRange(i+1, 6).setValue(inicio);
+          hoja.getRange(i+1, 7).setValue(fin);
+          hoja.getRange(i+1, 8).setValue(lugar);
+          hoja.getRange(i+1, 9).setValue(dias);
+          return resp({ status: "ok" }, callback);
         }
-      }).catch(reject);
-  });
-}
-
-function fetchJSON(url) {
-  return new Promise(function(resolve, reject) {
-    var cbName = 'cb' + Date.now() + Math.floor(Math.random()*9999);
-    window[cbName] = function(data) {
-      delete window[cbName];
-      var s = document.getElementById('s_' + cbName);
-      if (s) s.remove();
-      resolve(data);
-    };
-    var sep = url.indexOf('?') >= 0 ? '&' : '?';
-    var s = document.createElement('script');
-    s.id = 's_' + cbName;
-    s.src = url + sep + 'callback=' + cbName;
-    s.onerror = function() {
-      delete window[cbName];
-      s.remove();
-      reject(new Error('Error de conexion'));
-    };
-    document.body.appendChild(s);
-  });
-}
-
-function getMes() { return document.getElementById('g-mes').value; }
-function getAnio() { return document.getElementById('g-anio').value; }
-
-function badge(nom, obs) {
-  if (!nom) return '<span style="color:var(--text3)"> </span>';
-  var title = obs ? ' title="' + obs + '" style="cursor:help"' : '';
-  return '<span class="badge b-' + nom + '"' + title + '>' + nom + '</span>';
-}
-
-function setEstado(id, tipo, msg) {
-  var el = document.getElementById(id);
-  var dot = tipo === 'ok' ? 'ok' : tipo === 'err' ? 'err' : 'loading';
-  el.innerHTML = '<div class="dot ' + dot + '"></div>' + msg;
-}
-
-// RELOJ
-function actualizarReloj() {
-  var now = new Date();
-  document.getElementById('reloj').textContent =
-    String(now.getHours()).padStart(2,'0') + ':' +
-    String(now.getMinutes()).padStart(2,'0') + ':' +
-    String(now.getSeconds()).padStart(2,'0') + '   ' +
-    now.toLocaleDateString('es-PE',{weekday:'short',day:'numeric',month:'short'});
-}
-setInterval(actualizarReloj, 1000);
-actualizarReloj();
-
-// INIT
-window.onload = function() {
-  var now = new Date();
-  document.getElementById('g-mes').value = now.getMonth() + 1;
-  document.getElementById('g-anio').value = now.getFullYear();
-  cargarPersonal();
-};
-
-// PERSONAL BASE
-function cargarPersonal() {
-  fetchJSON(SCRIPT_URL + '?accion=listarPersonal').then(function(data) {
-    personalData = data.personal || [];
-    poblarSelectores(personalData);
-  }).catch(function(){});
-}
-
-function poblarSelectores(rows) {
-  ['con-trab','bio-nombre','ep-nombre'].forEach(function(id) {
-    var sel = document.getElementById(id);
-    if (!sel) return;
-    var val = sel.value;
-    sel.innerHTML = '<option value="">Selecciona...</option>';
-    rows.forEach(function(p) {
-      var op = document.createElement('option');
-      op.value = p.nombre_sistema;
-      op.textContent = p.nombre_sistema;
-      sel.appendChild(op);
-    });
-    if (val) sel.value = val;
-  });
-}
-
-// DASHBOARD
-function cargarDashboard() {
-  var mes = getMes(), anio = getAnio();
-  var btn = document.getElementById('btn-actualizar-dash');
-  var estado = document.getElementById('dash-estado');
-  if (btn) { btn.disabled = true; btn.textContent = 'Actualizando...'; }
-  if (estado) { estado.textContent = 'Cargando datos...'; estado.style.color = 'var(--cyan)'; }
-
-  fetchJSON(SCRIPT_URL + '?accion=dashboard&mes=' + mes + '&anio=' + anio).then(function(data) {
-    var s = data.stats || {};
-    document.getElementById('s-personal').textContent = s.personal || '0';
-    document.getElementById('s-asist').textContent = s.asistencias || '0';
-    document.getElementById('s-faltas').textContent = s.faltas || '0';
-    document.getElementById('s-foto').textContent = s.registros_foto || '0';
-    document.getElementById('s-bio').textContent = s.registros_bio || '0';
-    document.getElementById('s-ds').textContent = s.descansos || '0';
-    var ahora = new Date();
-    if (estado) { 
-      estado.textContent = 'Actualizado ' + String(ahora.getHours()).padStart(2,'0') + ':' + String(ahora.getMinutes()).padStart(2,'0');
-      estado.style.color = 'var(--green)';
-    }
-    if (btn) { btn.disabled = false; btn.textContent = 'Actualizar'; }
-    // Cargar ultimos registros
-    fetchJSON(SCRIPT_URL + '?accion=leerAsistencia&mes=' + mes + '&anio=' + anio).then(function(data2) {
-      var rows = (data2.asistencia || []).slice(-10).reverse();
-      var tbody = document.getElementById('dash-tabla');
-      if (!tbody) return;
-      if (rows.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="loading-cell">Sin registros</td></tr>'; return; }
-      tbody.innerHTML = '';
-      rows.forEach(function(r) {
-        var estado_color = r.estado==='A'?'green':r.estado==='F'?'red':r.estado==='DS'?'gray':'yellow';
-        var tr = document.createElement('tr');
-        tr.innerHTML = '<td>'+r.nombre+'</td><td>'+r.lugar+'</td><td>'+r.fecha+'</td><td>'+(r.h_inicio||'')+' - '+(r.h_fin||'')+'</td><td>'+(r.entrada||'')+'</td><td>'+(r.salida||'')+'</td><td><span class="badge '+estado_color+'">'+r.estado+'</span></td>';
-        tbody.appendChild(tr);
-      });
-    }).catch(function(){});
-  }).catch(function(e) {
-    if (estado) { estado.textContent = 'Error al actualizar'; estado.style.color = 'var(--red)'; }
-    if (btn) { btn.disabled = false; btn.textContent = 'Actualizar'; }
-  });
-}
-
-// PROGRAMACI N
-function cargarProgRaw() {
-  document.getElementById('btn-guardar-prog').disabled = true;
-  fetchJSON(SCRIPT_URL + '?accion=leerProgramacionRaw').then(function(data) {
-    document.getElementById('prog-texto').value = data.texto || '';
-    setEstado('prog-estado','ok','Programacion cargada');
-  }).catch(function(e) { setEstado('prog-estado','err','Error: ' + e.message); });
-}
-
-function guardarYProcesar() {
-  var texto = document.getElementById('prog-texto').value.trim();
-  if (!texto) { alert('Pega el mensaje primero'); return; }
-  setEstado('prog-estado','loading','Guardando...');
-  fetchJSON(SCRIPT_URL + '?accion=guardarProgramacionRaw&texto=' + encodeURIComponent(texto)).then(function() {
-    setEstado('prog-estado','loading','Procesando...');
-    return fetchJSON(SCRIPT_URL + '?accion=procesarProgramacion');
-  }).then(function() {
-    setEstado('prog-estado','ok','  Programacion procesada correctamente');
-  }).catch(function(e) { setEstado('prog-estado','err','Error: ' + e.message); });
-}
-
-// ASISTENCIA FINAL
-function cargarAsistencia() {
-  var mes = getMes(), anio = getAnio();
-  document.getElementById('asist-tabla').innerHTML = '<tr><td colspan="8" class="loading-cell">Cargando...</td></tr>';
-  fetchJSON(SCRIPT_URL + '?accion=leerAsistencia&mes=' + mes + '&anio=' + anio).then(function(data) {
-    var rows = data.asistencia || [];
-    document.getElementById('asist-tabla').innerHTML = rows.length === 0
-      ? '<tr><td colspan="8" class="loading-cell">Sin datos para ' + MESES[mes] + ' ' + anio + '</td></tr>'
-      : rows.map(function(r,i) {
-          return '<tr><td class="mono" style="color:var(--text3)">' + (i+1) + '</td>' +
-            '<td>' + r.nombre + '</td><td>' + (r.lugar||' ') + '</td>' +
-            '<td class="mono">' + r.fecha + '</td>' +
-            '<td class="mono">' + (r.hora_inicio||'') + (r.hora_fin?' - '+r.hora_fin:'') + '</td>' +
-            '<td class="mono" style="color:var(--green)">' + (r.entrada||' ') + '</td>' +
-            '<td class="mono" style="color:var(--red)">' + (r.salida||' ') + '</td>' +
-            '<td>' + badge(r.estado) + '</td></tr>';
-        }).join('');
-  }).catch(function(e) {
-    document.getElementById('asist-tabla').innerHTML = '<tr><td colspan="8" class="loading-cell" style="color:var(--red)">Error: ' + e.message + '</td></tr>';
-  });
-}
-
-// REPORTE MENSUAL
-function cargarMensual() {
-  document.getElementById('mensual-contenido').innerHTML = '<div class="loading-cell">Cargando...</div>';
-  fetchJSON(SCRIPT_URL + '?accion=leerReporteMensual').then(function(data) {
-    var rows = data.reporte || [];
-    if (rows.length === 0) { document.getElementById('mensual-contenido').innerHTML = '<div class="loading-cell">Sin datos</div>'; return; }
-    var html = '<table class="rep-table"><thead><tr><th class="lname">APELLIDOS Y NOMBRES</th>';
-    for (var d=1;d<=31;d++) html += '<th>' + d + '</th>';
-    html += '<th>F</th><th>T</th><th>A</th><th>D AS</th></tr></thead><tbody>';
-    rows.forEach(function(r) {
-      html += '<tr><td class="lname">' + r['NOMBRE'] + '</td>';
-      for (var d=1;d<=31;d++) {
-        var v = r[String(d)] || '';
-        var obs = r['obs_' + String(d)] || '';
-        var bg = v==='F'?'background:rgba(239,68,68,0.15)':v==='DS'?'background:rgba(79,142,247,0.1)':v==='CP'||v==='CPSS'?'background:rgba(245,158,11,0.1)':'';
-        html += '<td style="' + bg + '">' + (v ? badge(v, obs) : '') + '</td>';
       }
-      html += '<td class="mono" style="color:var(--red)">' + (r['TOTAL F']||'') + '</td>';
-      html += '<td class="mono" style="color:var(--yellow)">' + (r['TOTAL T']||'') + '</td>';
-      html += '<td class="mono" style="color:var(--green)">' + (r['TOTAL A']||'') + '</td>';
-      html += '<td class="mono" style="color:var(--blue)">' + (r['TOTAL DIAS']||'') + '</td></tr>';
-    });
-    html += '</tbody></table>';
-    document.getElementById('mensual-contenido').innerHTML = html;
-  }).catch(function(e) {
-    document.getElementById('mensual-contenido').innerHTML = '<div class="loading-cell" style="color:var(--red)">Error: ' + e.message + '</div>';
-  });
-}
-
-// REPORTE IMPRIMIR
-function cargarImprimir() {
-  document.getElementById('imprimir-contenido').innerHTML = '<div class="loading-cell">Cargando...</div>';
-  fetchJSON(SCRIPT_URL + '?accion=leerReporteImprimir').then(function(data) {
-    var rows = data.reporte || [];
-    if (rows.length === 0) { document.getElementById('imprimir-contenido').innerHTML = '<div class="loading-cell">Sin datos</div>'; return; }
-    var html = '<table class="rep-table"><thead><tr><th>DNI</th><th class="lname">APELLIDOS Y NOMBRES</th><th>CARGO</th>';
-    for (var d=1;d<=31;d++) html += '<th>' + d + '</th>';
-    html += '<th>D AS</th><th style="min-width:80px">FIRMA</th></tr></thead><tbody>';
-    rows.forEach(function(r) {
-      html += '<tr><td class="mono" style="font-size:10px">' + (r['DNI']||'') + '</td>';
-      html += '<td class="lname" style="font-weight:500">' + (r['NOMBRE']||'') + '</td>';
-      html += '<td style="font-size:11px;color:var(--text2)">' + (r['CARGO']||'') + '</td>';
-      for (var d=1;d<=31;d++) {
-        var v = r[String(d)] || '';
-        var obs = r['obs_' + String(d)] || '';
-        var bg = v==='F'?'background:rgba(239,68,68,0.15)':v==='DS'?'background:rgba(79,142,247,0.1)':v==='CP'||v==='CPSS'?'background:rgba(245,158,11,0.1)':'';
-        html += '<td style="' + bg + '">' + (v ? badge(v, obs) : '') + '</td>';
-      }
-      html += '<td class="mono" style="color:var(--blue)">' + (r['DIAS TRABAJADOS']||'') + '</td>';
-      html += '<td></td></tr>';
-    });
-    html += '</tbody></table>';
-    document.getElementById('imprimir-contenido').innerHTML = html;
-  }).catch(function(e) {
-    document.getElementById('imprimir-contenido').innerHTML = '<div class="loading-cell" style="color:var(--red)">Error: ' + e.message + '</div>';
-  });
-}
-
-// CONSULTA
-function cargarConsulta() {
-  var nombre = document.getElementById('con-trab').value;
-  var fechaInput = document.getElementById('con-fecha').value;
-  var fecha = '';
-  if (fechaInput) {
-    var d = new Date(fechaInput + 'T00:00:00');
-    fecha = String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
-  }
-  document.getElementById('con-tabla').innerHTML = '<tr><td colspan="7" class="loading-cell">Cargando...</td></tr>';
-  document.getElementById('con-stats-wrap').style.display = 'none';
-  document.getElementById('con-detalle').innerHTML = '';
-  var url = SCRIPT_URL + '?accion=consultarTrabajador';
-  if (nombre) url += '&nombre=' + encodeURIComponent(nombre);
-  if (fecha) url += '&fecha=' + encodeURIComponent(fecha);
-  fetchJSON(url).then(function(data) {
-    var rows = data.resultado || [];
-    if (nombre && rows.length > 0) {
-      var cntA=0,cntF=0,cntDS=0,cntO=0;
-      rows.forEach(function(r) {
-        if(r.estado==='A')cntA++; else if(r.estado==='F')cntF++; else if(r.estado==='DS')cntDS++; else if(r.estado)cntO++;
-      });
-      document.getElementById('con-stats-wrap').style.display = 'block';
-      document.getElementById('con-stats-grid').innerHTML =
-        '<div style="background:rgba(34,197,94,0.1);border:1px solid var(--green);border-radius:6px;padding:6px 14px;display:flex;align-items:center;gap:8px"><span style="font-family:monospace;font-size:18px;font-weight:700;color:var(--green)">' + cntA + '</span><span style="font-size:11px;color:var(--text3)">Asistencias</span></div>' +
-        '<div style="background:rgba(239,68,68,0.1);border:1px solid var(--red);border-radius:6px;padding:6px 14px;display:flex;align-items:center;gap:8px"><span style="font-family:monospace;font-size:18px;font-weight:700;color:var(--red)">' + cntF + '</span><span style="font-size:11px;color:var(--text3)">Faltas</span></div>' +
-        '<div style="background:rgba(79,142,247,0.1);border:1px solid var(--blue);border-radius:6px;padding:6px 14px;display:flex;align-items:center;gap:8px"><span style="font-family:monospace;font-size:18px;font-weight:700;color:var(--blue)">' + cntDS + '</span><span style="font-size:11px;color:var(--text3)">Descansos</span></div>' +
-        '<div style="background:rgba(245,158,11,0.1);border:1px solid var(--yellow);border-radius:6px;padding:6px 14px;display:flex;align-items:center;gap:8px"><span style="font-family:monospace;font-size:18px;font-weight:700;color:var(--yellow)">' + cntO + '</span><span style="font-size:11px;color:var(--text3)">Otros</span></div>';
+      return resp({ status: "error", message: "Trabajador no encontrado" }, callback);
     }
-    document.getElementById('con-tabla').innerHTML = rows.length === 0
-      ? '<tr><td colspan="7" class="loading-cell">Sin resultados</td></tr>'
-      : rows.map(function(r) {
-          return '<tr><td>' + r.nombre + '</td><td>' + (r.lugar||' ') + '</td>' +
-            '<td class="mono">' + r.fecha + '</td>' +
-            '<td class="mono">' + (r.hora_inicio||'') + (r.hora_fin?' - '+r.hora_fin:'') + '</td>' +
-            '<td class="mono" style="color:var(--green)">' + (r.entrada||' ') + '</td>' +
-            '<td class="mono" style="color:var(--red)">' + (r.salida||' ') + '</td>' +
-            '<td>' + badge(r.estado) + '</td></tr>';
-        }).join('');
-    // Mostrar fotos
-    var detalle = '';
-    rows.forEach(function(r) {
-      var fotos = r.fotos || [];
-      var bios = r.biometrico || [];
-      if (fotos.length === 0 && bios.length === 0) return;
-      detalle += '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-top:12px">';
-      detalle += '<div style="font-size:13px;font-weight:600;margin-bottom:12px">' + r.nombre + '   ' + r.fecha + ' ' + badge(r.estado) + '</div>';
-      if (fotos.length > 0) {
-        detalle += '<div style="font-size:10px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">  Marcaciones por foto</div>';
-        detalle += '<div style="display:flex;gap:12px;flex-wrap:wrap">';
-        fotos.forEach(function(f) {
-          detalle += '<div style="text-align:center">';
-          var fileId = f.url && f.url.match(/\/d\/([^/]+)/);
-          if (fileId) {
-            var thumb = 'https://drive.google.com/thumbnail?id=' + fileId[1] + '&sz=w200';
-            detalle += '<a href="' + f.url + '" target="_blank">';
-            detalle += '<img src="' + thumb + '" style="width:120px;height:120px;object-fit:cover;border-radius:6px;border:1px solid var(--border)" onerror="this.parentNode.style.display=\'none\'">';
-            detalle += '</a>';
+
+    // Completar programacion con horarios base (un dia o mes)
+    if (accion === "completarProgramacionBase") {
+      const ss = SpreadsheetApp.openById(SHEET_ID);
+      const hojaProg = ss.getSheetByName("PROGRAMACION");
+      const hojaPer = ss.getSheetByName("PERSONAL");
+
+      // Modo: fecha unica o mes completo
+      const fechaStr = decodeURIComponent(p.fecha || "");
+      const mesParam = parseInt(p.mes || "0");
+      const anioParam = parseInt(p.anio || "0");
+
+      // Construir lista de fechas a procesar
+      const fechasProcesar = [];
+      if (fechaStr) {
+        const partes = fechaStr.split("/");
+        fechasProcesar.push(new Date(parseInt(partes[2]), parseInt(partes[1])-1, parseInt(partes[0])));
+      } else if (mesParam && anioParam) {
+        const diasMes = new Date(anioParam, mesParam, 0).getDate();
+        for (let d = 1; d <= diasMes; d++) {
+          fechasProcesar.push(new Date(anioParam, mesParam-1, d));
+        }
+      } else {
+        return resp({ status: "error", message: "Fecha o mes/anio requeridos" }, callback);
+      }
+
+      // Mapeo dia semana
+      const diaNombre = ['D','L','M','X','J','V','S'];
+
+      // Construir mapa de programacion por fecha
+      const progPorFecha = {};
+      if (hojaProg.getLastRow() > 1) {
+        const datProg = hojaProg.getDataRange().getValues();
+        for (let i = 1; i < datProg.length; i++) {
+          if (!datProg[i][0]) continue;
+          const f = datProg[i][0];
+          let fTexto = "";
+          if (f instanceof Date) fTexto = Utilities.formatDate(f, Session.getScriptTimeZone(), "dd/MM/yyyy");
+          else fTexto = String(f);
+          if (!progPorFecha[fTexto]) progPorFecha[fTexto] = new Set();
+          progPorFecha[fTexto].add(String(datProg[i][1]).trim().toLowerCase());
+        }
+      }
+
+      // Datos personal
+      const datPer = hojaPer.getDataRange().getValues();
+      let agregados = 0;
+      const filasNuevas = [];
+
+      fechasProcesar.forEach(function(fechaObj) {
+        const fTexto = Utilities.formatDate(fechaObj, Session.getScriptTimeZone(), "dd/MM/yyyy");
+        const diaSemana = diaNombre[fechaObj.getDay()];
+        const trabConProg = progPorFecha[fTexto] || new Set();
+
+        for (let i = 1; i < datPer.length; i++) {
+          if (!datPer[i][0]) continue;
+          const nombreSis = String(datPer[i][0]).trim();
+          if (trabConProg.has(nombreSis.toLowerCase())) continue;
+          const hInicio = datPer[i][5] ? formatHora(datPer[i][5]) : "";
+          const hFin = datPer[i][6] ? formatHora(datPer[i][6]) : "";
+          const lugar = String(datPer[i][7] || "");
+          const diasTrab = String(datPer[i][8] || "").toUpperCase();
+          if (!hInicio || !hFin) continue;
+          // Si tiene dias_trabajo, verificar que el dia actual este en la lista
+          if (diasTrab) {
+            const listaDias = diasTrab.split(/[,\s]+/).filter(function(x){return x;});
+            if (listaDias.indexOf(diaSemana) < 0) continue;
           }
-          detalle += '<div class="mono" style="font-size:11px;color:var(--green);margin-top:4px">' + (f.hora||'') + '</div>';
-          detalle += '<div style="font-size:10px;color:var(--text3)">' + (f.tipo||'') + '   ' + (f.lugar||'') + '</div>';
-          detalle += '</div>';
-        });
-        detalle += '</div>';
-      }
-      if (bios.length > 0) {
-        detalle += '<div style="font-size:10px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin:12px 0 8px">  Marcaciones biometrico</div>';
-        detalle += '<div style="display:flex;gap:8px;flex-wrap:wrap">';
-        bios.forEach(function(b) {
-          detalle += '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px 14px;text-align:center">';
-          detalle += '<div class="mono" style="font-size:14px;color:var(--blue)">' + (b.hora||'') + '</div>';
-          detalle += '<div style="font-size:10px;color:var(--text3);margin-top:2px">' + (b.tipo||'Biometrico') + '</div>';
-          detalle += '</div>';
-        });
-        detalle += '</div>';
-      }
-      detalle += '</div>';
-    });
-    document.getElementById('con-detalle').innerHTML = detalle;
-  }).catch(function(e) {
-    document.getElementById('con-tabla').innerHTML = '<tr><td colspan="7" class="loading-cell" style="color:var(--red)">Error: ' + e.message + '</td></tr>';
-  });
-}
-
-// PROCESOS
-function ejecutar(accion, estadoId) {
-  var mes = document.getElementById('g-mes').value;
-  var anio = document.getElementById('g-anio').value;
-  var url = SCRIPT_URL + '?accion=' + accion + '&mes=' + mes + '&anio=' + anio;
-  setEstado(estadoId, 'loading', 'Ejecutando ' + accion + ' (' + mes + '/' + anio + ')...');
-  fetchJSON(url).then(function(data) {
-    if (data.status === 'ok') setEstado(estadoId, 'ok', 'OK ' + (data.message || 'Completado'));
-    else setEstado(estadoId, 'err', 'Error: ' + (data.message || 'Error'));
-  }).catch(function(e) { setEstado(estadoId, 'err', 'Error: ' + e.message); });
-}
-
-function ejecutarTodo() {
-  var pasos = ['unificarMarcaciones','generarAsistenciaFinal','generarReporteMensual','generarReporteImprimir'];
-  var i = 0;
-  function siguiente() {
-    if (i >= pasos.length) { setEstado('proc-estado','ok','  Todo completado'); return; }
-    var paso = pasos[i++];
-    setEstado('proc-estado','loading','Ejecutando ' + paso + ' (' + i + '/' + pasos.length + ')...');
-    fetchJSON(SCRIPT_URL + '?accion=' + paso).then(function() {
-      setTimeout(siguiente, 500);
-    }).catch(function(e) { setEstado('proc-estado','err','  Error en ' + paso + ': ' + e.message); });
-  }
-  siguiente();
-}
-
-// PINES
-function cambiarPinAcceso() {
-  var pin = document.getElementById('pin-acceso-new').value.trim();
-  if (!pin) { alert('Escribe el nuevo PIN'); return; }
-  fetchJSON(SCRIPT_URL + '?accion=cambiarPinAcceso&pin=' + encodeURIComponent(pin)).then(function(data) {
-    if (data.status === 'ok') { alert('PIN de acceso actualizado'); document.getElementById('pin-acceso-new').value = ''; }
-    else alert('Error: ' + data.message);
-  }).catch(function(e) { alert('Error: ' + e.message); });
-}
-
-function cambiarPinAdmin() {
-  var pin = document.getElementById('pin-admin-new').value.trim();
-  if (!pin) { alert('Escribe el nuevo PIN'); return; }
-  fetchJSON(SCRIPT_URL + '?accion=cambiarPin&nuevoPin=' + encodeURIComponent(pin)).then(function(data) {
-    if (data.status === 'ok') { alert('PIN admin actualizado'); document.getElementById('pin-admin-new').value = ''; }
-    else alert('Error: ' + data.message);
-  }).catch(function(e) { alert('Error: ' + e.message); });
-}
-
-// DESCARGAR EXCEL
-function descargarExcel(accion, btn) {
-  var mes = document.getElementById('g-mes').value;
-  var anio = document.getElementById('g-anio').value;
-  var bt = event.currentTarget;
-  var textoOrig = bt.textContent;
-  bt.textContent = 'Generando...';
-  bt.disabled = true;
-
-  var tipo = accion === 'generarExcelFirmas' ? 'firmas' :
-             accion === 'generarExcelTardanzas' ? 'tardanzas' :
-             accion === 'generarExcelDetalle' ? 'detalle' : 'mensual';
-  var meses = ["","ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
-  var mesNom = meses[parseInt(mes)];
-
-  var accionDatos = tipo === 'tardanzas' ? 'getDatosReporteTardanzas' :
-                    tipo === 'detalle' ? 'getDatosReporteDetalle' : 'getDatosReporte';
-
-  fetchJSON(SCRIPT_URL + '?accion=' + accionDatos + '&mes=' + mes + '&anio=' + anio).then(function(data) {
-    if (!data.trabajadores) {
-      bt.disabled = false; bt.textContent = textoOrig;
-      alert('Error al obtener datos'); return;
-    }
-    var payload = {
-      tipo: tipo,
-      trabajadores: data.trabajadores,
-      dias_mes: new Date(parseInt(anio), parseInt(mes), 0).getDate(),
-      mes_nom: mesNom,
-      anio: parseInt(anio),
-      leyenda: data.leyenda || []
-    };
-    return fetch(EXCEL_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(payload)
-    });
-  }).then(function(resp) {
-    if (!resp || !resp.ok) throw new Error('Error del servidor');
-    return resp.blob();
-  }).then(function(blob) {
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    var prefijos = {firmas:'Reporte_Firmas_', tardanzas:'Reporte_Tardanzas_', detalle:'Reporte_Detalle_'};
-    a.download = (prefijos[tipo] || 'Reporte_Asistencia_') + mesNom + '_' + anio + '.xlsx';
-    a.click();
-    URL.revokeObjectURL(url);
-    bt.disabled = false; bt.textContent = textoOrig;
-  }).catch(function(e) {
-    bt.disabled = false; bt.textContent = textoOrig;
-    alert('Error: ' + e.message);
-  });
-}
-
-// PROGRAMACION POR DIA
-function completarProgBase() {
-  var fecha = document.getElementById('prog-fecha-filtro').value;
-  if (!fecha) { alert('Primero selecciona un dia'); return; }
-  var fp = fecha.split('-');
-  var fechaFmt = fp[2] + '/' + fp[1] + '/' + fp[0];
-  if (!confirm('Agregar trabajadores faltantes con su horario base configurado para el ' + fechaFmt + '?')) return;
-  fetchJSON(SCRIPT_URL + '?accion=completarProgramacionBase&fecha=' + encodeURIComponent(fechaFmt))
-    .then(function(data) {
-      if (data.status === 'ok') {
-        alert('Se agregaron ' + data.agregados + ' trabajadores con su horario base');
-        cargarProgDia();
-      } else alert('Error: ' + data.message);
-    });
-}
-
-function agregarProgDia() {
-  var fecha = document.getElementById('prog-fecha-filtro').value;
-  if (!fecha) { alert('Primero selecciona un dia'); return; }
-  var fp = fecha.split('-');
-  var fechaFmt = fp[2] + '/' + fp[1] + '/' + fp[0];
-  var nombre = document.getElementById('prog-add-nombre').value;
-  var lugar = document.getElementById('prog-add-lugar').value;
-  var inicio = document.getElementById('prog-add-inicio').value;
-  var fin = document.getElementById('prog-add-fin').value;
-  var obs = document.getElementById('prog-add-obs') ? document.getElementById('prog-add-obs').value.trim() : '';
-  if (!nombre) { alert('Selecciona un trabajador'); return; }
-  fetchJSON(SCRIPT_URL + '?accion=agregarProgramacion&fecha=' + encodeURIComponent(fechaFmt) +
-    '&nombre=' + encodeURIComponent(nombre) +
-    '&lugar=' + encodeURIComponent(lugar) +
-    '&hora_inicio=' + encodeURIComponent(inicio) +
-    '&hora_fin=' + encodeURIComponent(fin) +
-    '&estado=PROGRAMADO' +
-    '&obs=' + encodeURIComponent(obs)
-  ).then(function(data) {
-    if (data.status === 'ok') {
-      document.getElementById('prog-add-inicio').value = '';
-      document.getElementById('prog-add-fin').value = '';
-      if (document.getElementById('prog-add-obs')) document.getElementById('prog-add-obs').value = '';
-      cargarProgDia();
-    } else alert('Error: ' + data.message);
-  }).catch(function(e) { alert('Error: ' + e.message); });
-}
-
-function limpiarProgDia() {
-  var fecha = document.getElementById('prog-fecha-filtro').value;
-  if (!fecha) { alert('Selecciona una fecha'); return; }
-  var fp = fecha.split('-');
-  var fechaFmt = fp[2] + '/' + fp[1] + '/' + fp[0];
-  if (!confirm('Eliminar toda la programacion del ' + fechaFmt + '?')) return;
-  fetchJSON(SCRIPT_URL + '?accion=limpiarProgDia&fecha=' + encodeURIComponent(fechaFmt))
-    .then(function(data) {
-      if (data.status === 'ok') {
-        alert('Programacion del ' + fechaFmt + ' eliminada: ' + data.eliminados + ' registros');
-        cargarProgDia();
-      } else alert('Error: ' + data.message);
-    }).catch(function(e) { alert('Error: ' + e.message); });
-}
-
-function cargarProgDia() {
-  var fecha = document.getElementById('prog-fecha-filtro').value;
-  if (!fecha) { alert('Selecciona una fecha'); return; }
-  // Convertir de yyyy-mm-dd a dd/MM/yyyy
-  var parts = fecha.split('-');
-  var fechaFmt = parts[2] + '/' + parts[1] + '/' + parts[0];
-  document.getElementById('prog-dia-tabla').innerHTML = '<tr><td colspan="6" class="loading-cell">Cargando...</td></tr>';
-  var lugares = window._lugaresCache || [];
-  // Cargar lugares si no estan en cache
-  var lugaresPromise = lugares.length > 0 
-    ? Promise.resolve({lugares: lugares})
-    : fetchJSON(SCRIPT_URL + '?accion=listarLugares');
-  lugaresPromise.then(function(dataLug) {
-    window._lugaresCache = dataLug.lugares || [];
-    return fetchJSON(SCRIPT_URL + '?accion=leerProgramacion');
-  }).then(function(data) {
-    progData = data.programacion || [];
-    var rows = progData.filter(function(r) { return r.fecha === fechaFmt; });
-    var tbody = document.getElementById('prog-dia-tabla');
-    if (rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="loading-cell">Sin programacion para ' + fechaFmt + '</td></tr>';
-      return;
-    }
-    var ESTADOS = window._estadosCache || ['PROGRAMADO','DS','CP','REVISION','T','FE','FR','CO','CPSS','DM','LM','LP','LO','LUB','LS','V','C'];
-    var lug = window._lugaresCache || [];
-    tbody.innerHTML = '';
-    rows.forEach(function(r) {
-      var tr = document.createElement('tr');
-      if (r.estado === 'REVISION') tr.style.background = 'rgba(239,68,68,0.05)';
-      var optsEstado = ESTADOS.map(function(e){
-        return '<option value="'+e+'"'+(r.estado===e?' selected':'')+'>'+e+'</option>';
-      }).join('');
-      var optsLugar = '<option value="">Sin lugar</option>';
-      lug.forEach(function(l){
-        optsLugar += '<option value="'+l+'"'+(r.lugar===l?' selected':'')+'>'+l+'</option>';
+          filasNuevas.push([fechaObj, nombreSis, lugar, hInicio, hFin, "PROGRAMADO", ""]);
+          agregados++;
+        }
       });
-      if (r.lugar && lug.indexOf(r.lugar) === -1) optsLugar += '<option value="'+r.lugar+'" selected>'+r.lugar+'</option>';
-      tr.innerHTML =
-        '<td style="font-size:12px;font-weight:500">'+r.nombre+'</td>'+
-        '<td><select id="dlug'+r.fila+'" style="height:30px;font-size:12px;width:140px">'+optsLugar+'</select></td>'+
-        '<td><input type="text" id="dini'+r.fila+'" value="'+(r.hora_inicio||'')+'" style="width:65px;height:30px;font-size:12px;font-family:monospace" placeholder="00:00"></td>'+
-        '<td><input type="text" id="dfin'+r.fila+'" value="'+(r.hora_fin||'')+'" style="width:65px;height:30px;font-size:12px;font-family:monospace" placeholder="00:00"></td>'+
-        '<td><select id="dest'+r.fila+'" style="height:30px;font-size:12px;min-width:100px">'+optsEstado+'</select></td>'+
-        '<td><input type="text" id="dobs'+r.fila+'" value="'+(r.obs||'')+'" style="width:180px;height:30px;font-size:12px" placeholder="Observacion..."></td>'+
-        '<td style="display:flex;gap:4px;padding:4px;align-items:center"></td>';
-      var btnG = document.createElement('button');
-      btnG.className = 'btn btn-primary';
-      btnG.style.cssText = 'height:28px;width:28px;padding:0;display:flex;align-items:center;justify-content:center';
-      btnG.title = 'Guardar';
-      btnG.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" stroke="white" stroke-width="2" fill="none"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>';
-      btnG.onclick = function(){ guardarProgDia(r.fila, btnG); };
-      var btnE = document.createElement('button');
-      btnE.className = 'btn btn-red';
-      btnE.style.cssText = 'height:28px;width:28px;padding:0;display:flex;align-items:center;justify-content:center';
-      btnE.title = 'Eliminar';
-      btnE.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" stroke="white" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>';
-      btnE.onclick = function(){ eliminarProgDia(r.fila); };
-      tr.lastElementChild.appendChild(btnG);
-      tr.lastElementChild.appendChild(btnE);
-      tbody.appendChild(tr);
-    });
-  }).catch(function(e) {
-    document.getElementById('prog-dia-tabla').innerHTML = '<tr><td colspan="6" class="loading-cell" style="color:var(--red)">Error: ' + e.message + '</td></tr>';
-  });
-}
 
-function guardarProgDia(fila, btn) {
-  var lugar = document.getElementById('dlug'+fila).value;
-  var ini = document.getElementById('dini'+fila).value;
-  var fin = document.getElementById('dfin'+fila).value;
-  var est = document.getElementById('dest'+fila).value;
-  var obs = document.getElementById('dobs'+fila) ? document.getElementById('dobs'+fila).value.trim() : '';
-  fetchJSON(SCRIPT_URL + '?accion=editarProgramacion&fila=' + fila +
-    '&lugar=' + encodeURIComponent(lugar) + '&hora_inicio=' + encodeURIComponent(ini) +
-    '&hora_fin=' + encodeURIComponent(fin) + '&estado=' + encodeURIComponent(est) +
-    '&obs=' + encodeURIComponent(obs))
-  .then(function(data) {
-    if (data.status === 'ok') {
-      btn.style.background = 'var(--green)';
-      setTimeout(function(){ btn.style.background = ''; }, 1500);
-    } else alert('Error: ' + data.message);
-  }).catch(function(e){ alert('Error: ' + e.message); });
-}
+      // Insertar todas las filas de una vez
+      if (filasNuevas.length > 0) {
+        const filaIni = hojaProg.getLastRow() + 1;
+        hojaProg.getRange(filaIni, 1, filasNuevas.length, 7).setValues(filasNuevas);
+      }
 
-function eliminarProgDia(fila) {
-  if (!confirm('Eliminar este registro?')) return;
-  fetchJSON(SCRIPT_URL + '?accion=eliminarProgramacion&fila=' + fila)
-  .then(function(data) {
-    if (data.status === 'ok') cargarProgDia();
-    else alert('Error: ' + data.message);
-  }).catch(function(e){ alert('Error: ' + e.message); });
-}
+      return resp({ status: "ok", agregados: agregados }, callback);
+    }
 
-// REGISTRO MANUAL
-function cargarRegistroManual() {
-  // Cargar trabajadores
-  fetchJSON(SCRIPT_URL + '?accion=listarPersonal').then(function(data) {
-    var sel = document.getElementById('rm-trabajador');
-    sel.innerHTML = '<option value="">Selecciona trabajador</option>';
-    (data.personal || []).forEach(function(p) {
-      var op = document.createElement('option');
-      op.value = p.nombre_sistema;
-      op.textContent = p.nombre_sistema;
-      sel.appendChild(op);
-    });
-  });
-  // Cargar lugares
-  fetchJSON(SCRIPT_URL + '?accion=listarLugares').then(function(data) {
-    var sel = document.getElementById('rm-lugar');
-    sel.innerHTML = '<option value="">Selecciona lugar</option>';
-    (data.lugares || []).forEach(function(l) {
-      var op = document.createElement('option');
-      op.value = l; op.textContent = l;
-      sel.appendChild(op);
-    });
-  });
-  // Fecha de hoy por defecto
-  var hoy = new Date();
-  var dd = String(hoy.getDate()).padStart(2,'0');
-  var mm = String(hoy.getMonth()+1).padStart(2,'0');
-  document.getElementById('rm-fecha').value = hoy.getFullYear()+'-'+mm+'-'+dd;
-  // Cargar tabla
-  cargarTablaRegistroManual();
-}
+    // Leer ASISTENCIA_FINAL del mes
+    if (accion === "leerAsistencia") {
+      const mes = parseInt(p.mes) || new Date().getMonth() + 1;
+      const anio = parseInt(p.anio) || new Date().getFullYear();
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const hoja = ss.getSheetByName("ASISTENCIA_FINAL");
+      const datos = hoja.getDataRange().getValues();
+      const resultado = [];
+      for (let i = 1; i < datos.length; i++) {
+        if (!datos[i][0]) continue;
+        const fecha = new Date(datos[i][0]);
+        if (fecha.getMonth() + 1 !== mes || fecha.getFullYear() !== anio) continue;
+        resultado.push({
+          fecha: Utilities.formatDate(fecha, Session.getScriptTimeZone(), "dd/MM/yyyy"),
+          nombre: String(datos[i][1]),
+          lugar: String(datos[i][2]),
+          hora_inicio: datos[i][3] ? formatHora(datos[i][3]) : "",
+          hora_fin: datos[i][4] ? formatHora(datos[i][4]) : "",
+          entrada: datos[i][5] ? formatHora(datos[i][5]) : "",
+          salida: datos[i][6] ? formatHora(datos[i][6]) : "",
+          estado: String(datos[i][7])
+        });
+      }
+      return resp({ status: "ok", asistencia: resultado }, callback);
+    }
 
-function guardarRegistroManual() {
-  var trabajador = document.getElementById('rm-trabajador').value;
-  var lugar = document.getElementById('rm-lugar').value;
-  var fechaInput = document.getElementById('rm-fecha').value;
-  var hora = document.getElementById('rm-hora').value;
-  var tipo = document.getElementById('rm-tipo').value;
-  var obs = document.getElementById('rm-obs').value.trim();
+    // Leer REPORTE_MENSUAL
+    if (accion === "leerReporteMensual") {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const hoja = ss.getSheetByName("REPORTE_MENSUAL");
+      const datos = hoja.getDataRange().getValues();
+      const encabezados = datos[0];
+      const filas = [];
+      for (let i = 1; i < datos.length; i++) {
+        if (!datos[i][0]) continue;
+        const fila = {};
+        for (let j = 0; j < encabezados.length; j++) {
+          fila[String(encabezados[j])] = datos[i][j] !== null ? String(datos[i][j]) : "";
+        }
+        filas.push(fila);
+      }
+      return resp({ status: "ok", reporte: filas }, callback);
+    }
 
-  if (!trabajador || !lugar || !fechaInput || !hora) {
-    alert('Completa todos los campos obligatorios');
-    return;
+    // Leer REPORTE_IMPRIMIR
+    if (accion === "leerReporteImprimir") {
+      const ss = SpreadsheetApp.openById(SHEET_ID);
+      const hoja = ss.getSheetByName("REPORTE_IMPRIMIR");
+      const datos = hoja.getDataRange().getValues();
+      const encabezados = datos[0];
+
+      // Mapa nombre_sistema -> nombre_completo (para buscar en REPORTE_IMPRIMIR)
+      const mapaNC2 = {};
+      const hojaPerRI = ss.getSheetByName("PERSONAL");
+      if (hojaPerRI && hojaPerRI.getLastRow() > 1) {
+        const datPerRI = hojaPerRI.getRange(2,1,hojaPerRI.getLastRow()-1,2).getValues();
+        datPerRI.forEach(function(r) {
+          if (r[0] && r[1]) {
+            mapaNC2[String(r[0]).trim().toLowerCase()] = String(r[1]).trim().toLowerCase();
+          }
+        });
+      }
+
+      // Mapa de observaciones desde PROGRAMACION: nombre_completo+dia -> obs
+      const mapaObs = {};
+      const hojaProg2 = ss.getSheetByName("PROGRAMACION");
+      if (hojaProg2 && hojaProg2.getLastRow() > 1) {
+        const datProg2 = hojaProg2.getDataRange().getValues();
+        for (let pi = 1; pi < datProg2.length; pi++) {
+          const obs = datProg2[pi][6] ? String(datProg2[pi][6]).trim() : "";
+          if (!obs) continue;
+          const fProg = datProg2[pi][0];
+          const nSistema = String(datProg2[pi][1]).trim().toLowerCase();
+          const nCompleto = mapaNC2[nSistema] || nSistema;
+          let dProg = "";
+          if (fProg instanceof Date) dProg = String(fProg.getDate());
+          else { const pp = String(fProg).split("/"); if (pp.length>=1) dProg = String(parseInt(pp[0])); }
+          mapaObs[nCompleto + "|" + dProg] = obs;
+        }
+      }
+
+      const filas = [];
+      for (let i = 1; i < datos.length; i++) {
+        if (!datos[i][0] && !datos[i][1]) continue;
+        const fila = {};
+        for (let j = 0; j < encabezados.length; j++) {
+          fila[String(encabezados[j])] = datos[i][j] !== null ? String(datos[i][j]) : "";
+        }
+        // Agregar observaciones por dia usando nombre_completo
+        const nombreKey = String(datos[i][1] || "").trim().toLowerCase();
+        for (let d = 1; d <= 31; d++) {
+          const obsKey = nombreKey + "|" + String(d);
+          if (mapaObs[obsKey]) fila["obs_" + d] = mapaObs[obsKey];
+        }
+        filas.push(fila);
+      }
+      return resp({ status: "ok", reporte: filas }, callback);
+    }
+
+    // Consultar trabajador
+    if (accion === "consultarTrabajador") {
+      const nombre = (p.nombre || "").toString().trim().toLowerCase();
+      const fecha = p.fecha || "";
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      
+      // Leer ASISTENCIA_FINAL
+      const hojaAs = ss.getSheetByName("ASISTENCIA_FINAL");
+      const datosAs = hojaAs.getDataRange().getValues();
+      
+      // Leer REGISTROS para fotos
+      const hojaReg = ss.getSheetByName("REGISTROS");
+      const datosReg = hojaReg.getDataRange().getValues();
+      
+      // Leer BIOMETRICO
+      const hojaBio = ss.getSheetByName("BIOMETRICO");
+      const datosBio = hojaBio.getDataRange().getValues();
+      
+      const resultado = [];
+      
+      for (let i = 1; i < datosAs.length; i++) {
+        if (!datosAs[i][0]) continue;
+        const nombreData = String(datosAs[i][1]).trim().toLowerCase();
+        const fechaData = Utilities.formatDate(new Date(datosAs[i][0]), Session.getScriptTimeZone(), "dd/MM/yyyy");
+        if (nombre && nombreData !== nombre) continue;
+        if (fecha && fechaData !== fecha) continue;
+        
+        // Buscar fotos del trabajador en ese dia
+        const fotos = [];
+        for (let j = 1; j < datosReg.length; j++) {
+          if (!datosReg[j][5]) continue;
+          const nomReg = String(datosReg[j][2]).trim().toLowerCase();
+          const fechaReg = Utilities.formatDate(new Date(datosReg[j][5]), Session.getScriptTimeZone(), "dd/MM/yyyy");
+          if (nomReg.includes(nombre) && fechaReg === fechaData) {
+            fotos.push({
+              hora: formatHora(datosReg[j][6]),
+              lugar: String(datosReg[j][4]),
+              tipo: String(datosReg[j][3]),
+              url: String(datosReg[j][9])
+            });
+          }
+        }
+        
+        // Buscar marcaciones biometricas
+        const biometrico = [];
+        for (let k = 1; k < datosBio.length; k++) {
+          if (!datosBio[k][2]) continue;
+          const nomBio = String(datosBio[k][1]).trim().toLowerCase();
+          const fechaBio = Utilities.formatDate(new Date(datosBio[k][2]), Session.getScriptTimeZone(), "dd/MM/yyyy");
+          if (nomBio.includes(nombre) && fechaBio === fechaData) {
+            biometrico.push({
+              hora: formatHora(datosBio[k][3]),
+              tipo: String(datosBio[k][4])
+            });
+          }
+        }
+        
+        resultado.push({
+          fecha: fechaData,
+          nombre: String(datosAs[i][1]),
+          lugar: String(datosAs[i][2]),
+          hora_inicio: datosAs[i][3] ? formatHora(datosAs[i][3]) : "",
+          hora_fin: datosAs[i][4] ? formatHora(datosAs[i][4]) : "",
+          entrada: datosAs[i][5] ? formatHora(datosAs[i][5]) : "",
+          salida: datosAs[i][6] ? formatHora(datosAs[i][6]) : "",
+          estado: String(datosAs[i][7]),
+          fotos: fotos,
+          biometrico: biometrico
+        });
+      }
+      return resp({ status: "ok", resultado }, callback);
+    }
+
+    // Leer programación raw (para ver el texto actual)
+    if (accion === "leerProgramacionRaw") {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const hoja = ss.getSheetByName("PROGRAMACION_RAW");
+      const texto = hoja.getRange("A2").getDisplayValue();
+      return resp({ status: "ok", texto }, callback);
+    }
+
+    // Guardar programación raw (pegar nuevo mensaje de WhatsApp)
+    if (accion === "guardarProgramacionRaw") {
+      const texto = decodeURIComponent(p.texto || "");
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const hoja = ss.getSheetByName("PROGRAMACION_RAW");
+      hoja.getRange("A2").setValue(texto);
+      return resp({ status: "ok", message: "Programación guardada" }, callback);
+    }
+
+    // Stats del dashboard
+    if (accion === "dashboard") {
+      const mes = parseInt(p.mes) || new Date().getMonth() + 1;
+      const anio = parseInt(p.anio) || new Date().getFullYear();
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+      // Contar personal
+      const hojaP = ss.getSheetByName("PERSONAL");
+      const totalPersonal = Math.max(0, hojaP.getLastRow() - 1);
+
+      // Contar registros foto del mes
+      const hojaReg = ss.getSheetByName("REGISTROS");
+      const datosReg = hojaReg.getDataRange().getValues();
+      let totalFoto = 0;
+      for (let i = 1; i < datosReg.length; i++) {
+        if (!datosReg[i][5]) continue;
+        try {
+          const f = new Date(datosReg[i][5]);
+          if (f.getMonth() + 1 === mes && f.getFullYear() === anio) totalFoto++;
+        } catch(e) {}
+      }
+
+      // Contar biométrico del mes
+      const hojaBio = ss.getSheetByName("BIOMETRICO");
+      const datosBio = hojaBio.getDataRange().getValues();
+      let totalBio = 0;
+      for (let i = 1; i < datosBio.length; i++) {
+        if (!datosBio[i][2]) continue;
+        try {
+          const f = new Date(datosBio[i][2]);
+          if (f.getMonth() + 1 === mes && f.getFullYear() === anio) totalBio++;
+        } catch(e) {}
+      }
+
+      // Contar asistencias del mes
+      const hojaAs = ss.getSheetByName("ASISTENCIA_FINAL");
+      const datosAs = hojaAs.getDataRange().getValues();
+      let totalA = 0, totalF = 0, totalDS = 0;
+      for (let i = 1; i < datosAs.length; i++) {
+        if (!datosAs[i][0]) continue;
+        try {
+          const f = new Date(datosAs[i][0]);
+          if (f.getMonth() + 1 === mes && f.getFullYear() === anio) {
+            const est = String(datosAs[i][7]);
+            if (est === "A") totalA++;
+            if (est === "F") totalF++;
+            if (est === "DS") totalDS++;
+          }
+        } catch(e) {}
+      }
+
+      return resp({ status: "ok", stats: {
+        personal: totalPersonal,
+        registros_foto: totalFoto,
+        registros_bio: totalBio,
+        asistencias: totalA,
+        faltas: totalF,
+        descansos: totalDS
+      }}, callback);
+    }
+
+
+    // ── REGISTRO DE ASISTENCIA (FORMULARIO FOTO) ──
+    if (accion === "registro") {
+      const ss = SpreadsheetApp.openById(SHEET_ID);
+      let hReg = ss.getSheetByName("REGISTROS");
+      if (!hReg) { hReg = ss.insertSheet("REGISTROS"); hReg.appendRow(["N","DNI","Nombre","Tipo","Lugar","Fecha","Hora","Latitud","Longitud","Foto","Registrado"]); }
+      // Buscar DNI en PERSONAL por nombre_sistema
+      const nombreSistema = decodeURIComponent(p.codigo || "").trim();
+      let dni = nombreSistema; // fallback
+      const hPer = ss.getSheetByName("PERSONAL");
+      if (hPer && hPer.getLastRow() > 1) {
+        const datPer = hPer.getRange(2,1,hPer.getLastRow()-1,3).getValues();
+        for (let i=0; i<datPer.length; i++) {
+          if (String(datPer[i][0]).trim().toLowerCase() === nombreSistema.trim().toLowerCase()) {
+            dni = String(datPer[i][2]);
+            break;
+          }
+        }
+      }
+      const n = hReg.getLastRow();
+      hReg.appendRow([n, dni, decodeURIComponent(p.nombre||""), decodeURIComponent(p.tipo||""), decodeURIComponent(p.lugar||"N/D"), decodeURIComponent(p.fecha||""), decodeURIComponent(p.hora||""), decodeURIComponent(p.latitud||"N/D"), decodeURIComponent(p.longitud||"N/D"), "Pendiente", new Date()]);
+      return resp({ status: "ok", fila: hReg.getLastRow() }, callback);
+    }
+
+    // ── SUBIR FOTO EN PARTES ──
+    if (accion === "fotoChunk") {
+      try {
+        const fila = parseInt(p.fila || "0");
+        const parte = parseInt(p.parte || "0");
+        const total = parseInt(p.total || "1");
+        const data = decodeURIComponent(p.data || "");
+        const props = PropertiesService.getScriptProperties();
+        props.setProperty("foto_" + fila + "_" + parte, data);
+        if (parte === total - 1) {
+          let fotoCompleta = "";
+          for (let i = 0; i < total; i++) {
+            fotoCompleta += props.getProperty("foto_" + fila + "_" + i) || "";
+            props.deleteProperty("foto_" + fila + "_" + i);
+          }
+          const ss = SpreadsheetApp.openById(SHEET_ID);
+          const hReg = ss.getSheetByName("REGISTROS");
+          const folder = DriveApp.getFolderById(FOLDER_ID);
+          const blob = Utilities.newBlob(Utilities.base64Decode(fotoCompleta), "image/jpeg", "foto_"+fila+".jpg");
+          const file = folder.createFile(blob);
+          file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+          if (hReg) hReg.getRange(fila, 10).setValue(file.getUrl());
+          return resp({ status: "ok", message: "Foto guardada", url: file.getUrl() }, callback);
+        }
+        return resp({ status: "ok", message: "Parte " + parte + " guardada" }, callback);
+      } catch(err) { return resp({ status: "error", message: err.toString() }, callback); }
+    }
+
+    // ── GET DATOS REPORTE TARDANZAS ──
+    if (accion === "getDatosReporteTardanzas") {
+      const mes = parseInt(p.mes || new Date().getMonth() + 1);
+      const anio = parseInt(p.anio || new Date().getFullYear());
+      const trabajadores = obtenerDatosReporteDetalle(mes, anio);
+      const ss2 = SpreadsheetApp.openById(SHEET_ID);
+      const hojaLey2 = ss2.getSheetByName("LEYENDA");
+      const leyenda = [];
+      if (hojaLey2 && hojaLey2.getLastRow() > 1) {
+        const datLey2 = hojaLey2.getRange(2,1,hojaLey2.getLastRow()-1,2).getValues();
+        datLey2.forEach(function(r) {
+          if (r[0] && r[1]) leyenda.push({desc: String(r[0]).trim(), cod: String(r[1]).trim()});
+        });
+      }
+      return resp({ status: "ok", trabajadores: trabajadores, leyenda: leyenda }, callback);
+    }
+
+    // ── GET DATOS REPORTE DETALLE ──
+    if (accion === "getDatosReporteDetalle") {
+      const mes = parseInt(p.mes || new Date().getMonth() + 1);
+      const anio = parseInt(p.anio || new Date().getFullYear());
+      const trabajadores = obtenerDatosReporteDetalle(mes, anio);
+      const ss2 = SpreadsheetApp.openById(SHEET_ID);
+      const hojaLey2 = ss2.getSheetByName("LEYENDA");
+      const leyenda = [];
+      if (hojaLey2 && hojaLey2.getLastRow() > 1) {
+        const datLey2 = hojaLey2.getRange(2,1,hojaLey2.getLastRow()-1,2).getValues();
+        datLey2.forEach(function(r) {
+          if (r[0] && r[1]) leyenda.push({desc: String(r[0]).trim(), cod: String(r[1]).trim()});
+        });
+      }
+      return resp({ status: "ok", trabajadores: trabajadores, leyenda: leyenda }, callback);
+    }
+
+    // ── GET DATOS REPORTE PARA SERVIDOR EXCEL ──
+    if (accion === "getDatosReporte") {
+      const mes = parseInt(p.mes || new Date().getMonth() + 1);
+      const anio = parseInt(p.anio || new Date().getFullYear());
+      const trabajadores = obtenerDatosReporte(mes, anio);
+
+      // Agregar observaciones de PROGRAMACION a cada trabajador
+      const ss2 = SpreadsheetApp.openById(SHEET_ID);
+      const hojaProg3 = ss2.getSheetByName("PROGRAMACION");
+
+      // Mapa nombre_sistema -> nombre_completo
+      const mapaSisToComp = {};
+      trabajadores.forEach(function(t) {
+        // El nombre en programacion es nombre_sistema, necesitamos encontrar al trabajador
+        mapaSisToComp[normalizar(t.nombre_completo)] = t;
+      });
+
+      // Mapa nombre_completo desde personal
+      const hojaPerObs = ss2.getSheetByName("PERSONAL");
+      const mapaNSisToNC = {};
+      if (hojaPerObs && hojaPerObs.getLastRow() > 1) {
+        const datPerObs = hojaPerObs.getRange(2,1,hojaPerObs.getLastRow()-1,2).getValues();
+        datPerObs.forEach(function(r) {
+          if (r[0] && r[1]) mapaNSisToNC[String(r[0]).trim().toLowerCase()] = String(r[1]).trim();
+        });
+      }
+
+      if (hojaProg3 && hojaProg3.getLastRow() > 1) {
+        const datProg3 = hojaProg3.getDataRange().getValues();
+        const estadosConObs = ["CPSS","CP","V","CO"];
+        datProg3.forEach(function(row) {
+          const obs = row[6] ? String(row[6]).trim() : "";
+          if (!obs) return;
+          const estado = String(row[5]).trim();
+          if (estadosConObs.indexOf(estado) < 0) return;
+          const fProg = row[0];
+          const nSis = String(row[1]).trim().toLowerCase();
+          const nComp = mapaNSisToNC[nSis] || "";
+          let dia = 0;
+          if (fProg instanceof Date) dia = fProg.getDate();
+          else { const pp = String(fProg).split("/"); if (pp.length>=1) dia = parseInt(pp[0]); }
+          if (!dia || !nComp) return;
+          // Buscar trabajador por nombre_completo
+          const trab = mapaSisToComp[normalizar(nComp)];
+          if (trab) trab['obs_' + dia] = obs;
+        });
+      }
+
+      // Leer leyenda
+      const hojaLey2 = ss2.getSheetByName("LEYENDA");
+      const leyenda = [];
+      if (hojaLey2 && hojaLey2.getLastRow() > 1) {
+        const datLey2 = hojaLey2.getRange(2,1,hojaLey2.getLastRow()-1,2).getValues();
+        datLey2.forEach(function(r) {
+          if (r[0] && r[1]) leyenda.push({desc: String(r[0]).trim(), cod: String(r[1]).trim()});
+        });
+      }
+      return resp({ status: "ok", trabajadores: trabajadores, leyenda: leyenda }, callback);
+    }
+
+    // ── GENERAR EXCEL REPORTE MENSUAL ──
+    if (accion === "generarExcelMensual") {
+      const mes = parseInt(p.mes || new Date().getMonth() + 1);
+      const anio = parseInt(p.anio || new Date().getFullYear());
+      const url = generarExcelMensual(mes, anio);
+      return resp({ status: "ok", url: url }, callback);
+    }
+
+    // ── GENERAR EXCEL FIRMAS ──
+    if (accion === "generarExcelFirmas") {
+      const mes = parseInt(p.mes || new Date().getMonth() + 1);
+      const anio = parseInt(p.anio || new Date().getFullYear());
+      const url = generarExcelFirmas(mes, anio);
+      return resp({ status: "ok", url: url }, callback);
+    }
+
+    // ── UNIFICAR NOMBRES PROGRAMACION ──
+    if (accion === "unificarNombresProg") {
+      const ss = SpreadsheetApp.openById(SHEET_ID);
+      const hoja = ss.getSheetByName("PROGRAMACION");
+      if (!hoja || hoja.getLastRow() <= 1) return resp({ status: "ok", message: "Sin datos" }, callback);
+      const datos = hoja.getDataRange().getValues();
+      let corregidos = 0;
+      for (let i = 1; i < datos.length; i++) {
+        const nombre = String(datos[i][1]).trim();
+        if (!nombre) continue;
+        // Quitar tildes y normalizar
+        const nombreNorm = nombre.normalize("NFD").replace(/[̀-ͯ]/g, "")
+          .replace(/\s+/g, " ").trim();
+        // Capitalizar primera letra de cada palabra
+        const nombreFinal = nombreNorm.split(" ").map(function(w) {
+          return w.charAt(0).toUpperCase() + w.slice(1);
+        }).join(" ");
+        if (nombreFinal !== nombre) {
+          hoja.getRange(i+1, 2).setValue(nombreFinal);
+          corregidos++;
+        }
+      }
+      return resp({ status: "ok", message: "Corregidos: " + corregidos + " nombres" }, callback);
+    }
+
+    // ── REGISTRO MANUAL ──
+    if (accion === "registroManual") {
+      const ss = SpreadsheetApp.openById(SHEET_ID);
+      let hReg = ss.getSheetByName("REGISTROS");
+      if (!hReg) { hReg = ss.insertSheet("REGISTROS"); hReg.appendRow(["N","DNI","Nombre","Tipo","Lugar","Fecha","Hora","Latitud","Longitud","Foto","Registrado","Origen","Observacion"]); }
+      // Buscar nombre completo y DNI
+      const nombreSistema = decodeURIComponent(p.trabajador || "");
+      let dni = "", nombreCompleto = nombreSistema;
+      const hPer = ss.getSheetByName("PERSONAL");
+      if (hPer && hPer.getLastRow() > 1) {
+        const datPer = hPer.getRange(2,1,hPer.getLastRow()-1,4).getValues();
+        for (let i=0; i<datPer.length; i++) {
+          if (String(datPer[i][0]).trim().toLowerCase() === nombreSistema.trim().toLowerCase()) {
+            dni = String(datPer[i][2]);
+            nombreCompleto = String(datPer[i][1]) || nombreSistema;
+            break;
+          }
+        }
+      }
+      const n = hReg.getLastRow();
+      const fechaStr = decodeURIComponent(p.fecha || "");
+      const horaStr = decodeURIComponent(p.hora || "");
+      const fila = hReg.getLastRow() + 1;
+      hReg.getRange(fila, 1).setValue(n);
+      hReg.getRange(fila, 2).setValue(dni);
+      hReg.getRange(fila, 3).setValue(nombreCompleto);
+      hReg.getRange(fila, 4).setValue(decodeURIComponent(p.tipo || ""));
+      hReg.getRange(fila, 5).setValue(decodeURIComponent(p.lugar || ""));
+      hReg.getRange(fila, 6).setNumberFormat("@").setValue(fechaStr);
+      hReg.getRange(fila, 7).setNumberFormat("@").setValue(horaStr);
+      hReg.getRange(fila, 8).setValue("N/D");
+      hReg.getRange(fila, 9).setValue("N/D");
+      hReg.getRange(fila, 10).setValue("MANUAL");
+      hReg.getRange(fila, 11).setValue(new Date());
+      hReg.getRange(fila, 12).setValue("MANUAL");
+      hReg.getRange(fila, 13).setValue(decodeURIComponent(p.obs || ""));
+      return resp({ status: "ok", message: "Registro manual guardado" }, callback);
+    }
+
+    if (accion === "listarRegistroManual") {
+      const ss = SpreadsheetApp.openById(SHEET_ID);
+      const hReg = ss.getSheetByName("REGISTROS");
+      const mes = parseInt(p.mes || new Date().getMonth() + 1);
+      const anio = parseInt(p.anio || new Date().getFullYear());
+      if (!hReg || hReg.getLastRow() <= 1) return resp({ status: "ok", registros: [] }, callback);
+      const datos = hReg.getDataRange().getValues();
+      const registros = [];
+      for (let i = 1; i < datos.length; i++) {
+        if (String(datos[i][9]) !== "MANUAL") continue;
+        const fecha = datos[i][5];
+        if (!fecha) continue;
+        const parts = String(fecha).split("/");
+        if (parts.length === 3) {
+          if (parseInt(parts[1]) !== mes || parseInt(parts[2]) !== anio) continue;
+        }
+        registros.push({
+          fila: i + 1,
+          trabajador: datos[i][2],
+          lugar: datos[i][4],
+          fecha: datos[i][5],
+          hora: datos[i][6],
+          tipo: datos[i][3],
+          obs: datos[i][12] || ""
+        });
+      }
+      return resp({ status: "ok", registros }, callback);
+    }
+
+    if (accion === "eliminarRegistroManual") {
+      const ss = SpreadsheetApp.openById(SHEET_ID);
+      const hReg = ss.getSheetByName("REGISTROS");
+      hReg.deleteRow(parseInt(p.fila));
+      return resp({ status: "ok", message: "Eliminado" }, callback);
+    }
+
+    // ── GESTIÓN DE PERSONAL ──
+    if (accion === "agregarPersonal") {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const hoja = ss.getSheetByName("PERSONAL");
+      const nombre = p.nombre_sistema || "";
+      const nombreCompleto = p.nombre_completo || "";
+      const dni = p.dni || "";
+      const cargo = p.cargo || "";
+      if (!nombre) return resp({ status: "error", message: "Falta nombre" }, callback);
+      hoja.appendRow([nombre, nombreCompleto, dni, cargo]);
+      return resp({ status: "ok", message: "Personal agregado" }, callback);
+    }
+
+    if (accion === "eliminarPersonal") {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const hoja = ss.getSheetByName("PERSONAL");
+      const datos = hoja.getDataRange().getValues();
+      for (let i = 1; i < datos.length; i++) {
+        if (String(datos[i][0]).trim().toLowerCase() === String(p.nombre_sistema || "").trim().toLowerCase()) {
+          hoja.deleteRow(i + 1);
+          return resp({ status: "ok", message: "Personal eliminado" }, callback);
+        }
+      }
+      return resp({ status: "error", message: "No encontrado" }, callback);
+    }
+
+    // ── CARGA BIOMÉTRICO ──
+    if (accion === "agregarBiometrico") {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const hoja = ss.getSheetByName("BIOMETRICO");
+      const dni = p.dni || "";
+      const nombre = p.nombre || "";
+      const fecha = p.fecha || "";
+      const hora = p.hora || "";
+      const tipo = p.tipo || "";
+      if (!nombre || !fecha || !hora) return resp({ status: "error", message: "Faltan datos" }, callback);
+      hoja.appendRow([dni, nombre, fecha, hora, tipo]);
+      return resp({ status: "ok", message: "Registro biométrico agregado" }, callback);
+    }
+
+    if (accion === "eliminarBiometrico") {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const hoja = ss.getSheetByName("BIOMETRICO");
+      const fila = parseInt(p.fila || "0");
+      if (fila < 2) return resp({ status: "error", message: "Fila inválida" }, callback);
+      hoja.deleteRow(fila);
+      return resp({ status: "ok", message: "Eliminado" }, callback);
+    }
+
+    if (accion === "leerBiometrico") {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const hoja = ss.getSheetByName("BIOMETRICO");
+      const datos = hoja.getDataRange().getValues();
+      const resultado = [];
+      for (let i = 1; i < datos.length; i++) {
+        if (!datos[i][1]) continue;
+        resultado.push({
+          fila: i + 1,
+          dni: String(datos[i][0]),
+          nombre: String(datos[i][1]),
+          fecha: datos[i][2] ? Utilities.formatDate(new Date(datos[i][2]), Session.getScriptTimeZone(), "dd/MM/yyyy") : "",
+          hora: datos[i][3] ? formatHora(datos[i][3]) : "",
+          tipo: String(datos[i][4] || "")
+        });
+      }
+      return resp({ status: "ok", registros: resultado }, callback);
+    }
+
+    // ── EDITAR PROGRAMACIÓN ──
+    if (accion === "leerProgramacion") {
+      const ss = SpreadsheetApp.openById(SHEET_ID);
+      const hoja = ss.getSheetByName("PROGRAMACION");
+      const datos = hoja.getDataRange().getValues();
+      const resultado = [];
+      for (let i = 1; i < datos.length; i++) {
+        if (!datos[i][0]) continue;
+        resultado.push({
+          fila: i + 1,
+          fecha: datos[i][0] ? Utilities.formatDate(new Date(datos[i][0]), Session.getScriptTimeZone(), "dd/MM/yyyy") : "",
+          nombre: String(datos[i][1]),
+          lugar: String(datos[i][2] || ""),
+          hora_inicio: datos[i][3] ? formatHora(datos[i][3]) : "",
+          hora_fin: datos[i][4] ? formatHora(datos[i][4]) : "",
+          estado: String(datos[i][5] || ""),
+          obs: datos[i][6] ? String(datos[i][6]).trim() : ""
+        });
+      }
+      return resp({ status: "ok", programacion: resultado }, callback);
+    }
+
+    if (accion === "limpiarProgDia") {
+      const ss = SpreadsheetApp.openById(SHEET_ID);
+      const hojaProg = ss.getSheetByName("PROGRAMACION");
+      const fechaStr = decodeURIComponent(p.fecha || "");
+      if (!fechaStr || !hojaProg || hojaProg.getLastRow() <= 1) 
+        return resp({ status: "ok", eliminados: 0 }, callback);
+      const datos = hojaProg.getDataRange().getValues();
+      let eliminados = 0;
+      // Eliminar de abajo para arriba para no afectar indices
+      for (let i = datos.length - 1; i >= 1; i--) {
+        const fechaFila = datos[i][0];
+        let fechaTexto = "";
+        if (fechaFila instanceof Date) {
+          const dd = String(fechaFila.getDate()).padStart(2,"0");
+          const mm = String(fechaFila.getMonth()+1).padStart(2,"0");
+          const yyyy = fechaFila.getFullYear();
+          fechaTexto = dd + "/" + mm + "/" + yyyy;
+        } else {
+          fechaTexto = String(fechaFila).trim();
+        }
+        if (fechaTexto === fechaStr) {
+          hojaProg.deleteRow(i + 1);
+          eliminados++;
+        }
+      }
+      return resp({ status: "ok", eliminados: eliminados }, callback);
+    }
+
+    if (accion === "agregarProgramacion") {
+      const ss = SpreadsheetApp.openById(SHEET_ID);
+      const hojaProg = ss.getSheetByName("PROGRAMACION");
+      const fechaStr = decodeURIComponent(p.fecha || "");
+      const nombre = decodeURIComponent(p.nombre || "");
+      const lugar = decodeURIComponent(p.lugar || "");
+      const inicio = decodeURIComponent(p.hora_inicio || "");
+      const fin = decodeURIComponent(p.hora_fin || "");
+      const estado = decodeURIComponent(p.estado || "PROGRAMADO");
+      if (!fechaStr || !nombre) return resp({ status: "error", message: "Faltan datos" }, callback);
+      // Convertir fecha dd/MM/yyyy a Date
+      const partes = fechaStr.split("/");
+      const obs = decodeURIComponent(p.obs || "");
+      const fechaObj = new Date(parseInt(partes[2]), parseInt(partes[1])-1, parseInt(partes[0]));
+      const filaNew = hojaProg.getLastRow()+1;
+      hojaProg.getRange(filaNew, 1).setValue(fechaObj);
+      hojaProg.getRange(filaNew, 2).setValue(nombre);
+      hojaProg.getRange(filaNew, 3).setValue(lugar);
+      hojaProg.getRange(filaNew, 4).setValue(inicio);
+      hojaProg.getRange(filaNew, 5).setValue(fin);
+      hojaProg.getRange(filaNew, 6).setValue(estado);
+      hojaProg.getRange(filaNew, 7).setValue(obs);
+      return resp({ status: "ok", message: "Registro agregado" }, callback);
+    }
+
+    if (accion === "editarProgramacion") {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const hoja = ss.getSheetByName("PROGRAMACION");
+      const fila = parseInt(p.fila || "0");
+      if (fila < 2) return resp({ status: "error", message: "Fila inválida" }, callback);
+      if (p.lugar !== undefined) hoja.getRange(fila, 3).setValue(p.lugar);
+      if (p.hora_inicio !== undefined) hoja.getRange(fila, 4).setValue(p.hora_inicio);
+      if (p.hora_fin !== undefined) hoja.getRange(fila, 5).setValue(p.hora_fin);
+      if (p.estado !== undefined) hoja.getRange(fila, 6).setValue(p.estado);
+      if (p.obs !== undefined) hoja.getRange(fila, 7).setValue(decodeURIComponent(p.obs || ""));
+      return resp({ status: "ok", message: "Programación actualizada" }, callback);
+    }
+
+    if (accion === "limpiarProgDia") {
+      const ss = SpreadsheetApp.openById(SHEET_ID);
+      const hojaProg = ss.getSheetByName("PROGRAMACION");
+      const fechaStr = decodeURIComponent(p.fecha || "");
+      if (!fechaStr || !hojaProg || hojaProg.getLastRow() <= 1) 
+        return resp({ status: "ok", eliminados: 0 }, callback);
+      const datos = hojaProg.getDataRange().getValues();
+      let eliminados = 0;
+      // Eliminar de abajo para arriba para no afectar indices
+      for (let i = datos.length - 1; i >= 1; i--) {
+        const fechaFila = datos[i][0];
+        let fechaTexto = "";
+        if (fechaFila instanceof Date) {
+          const dd = String(fechaFila.getDate()).padStart(2,"0");
+          const mm = String(fechaFila.getMonth()+1).padStart(2,"0");
+          const yyyy = fechaFila.getFullYear();
+          fechaTexto = dd + "/" + mm + "/" + yyyy;
+        } else {
+          fechaTexto = String(fechaFila).trim();
+        }
+        if (fechaTexto === fechaStr) {
+          hojaProg.deleteRow(i + 1);
+          eliminados++;
+        }
+      }
+      return resp({ status: "ok", eliminados: eliminados }, callback);
+    }
+
+    if (accion === "agregarProgramacion") {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const hoja = ss.getSheetByName("PROGRAMACION");
+      const fecha = p.fecha || "";
+      const nombre = p.nombre || "";
+      const lugar = p.lugar || "";
+      const hora_inicio = p.hora_inicio || "";
+      const hora_fin = p.hora_fin || "";
+      const estado = p.estado || "PROGRAMADO";
+      if (!fecha || !nombre) return resp({ status: "error", message: "Faltan datos" }, callback);
+      hoja.appendRow([new Date(fecha.split("/").reverse().join("-")), nombre, lugar, hora_inicio, hora_fin, estado]);
+      return resp({ status: "ok", message: "Registro agregado" }, callback);
+    }
+
+    if (accion === "eliminarProgramacion") {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const hoja = ss.getSheetByName("PROGRAMACION");
+      const fila = parseInt(p.fila || "0");
+      if (fila < 2) return resp({ status: "error", message: "Fila inválida" }, callback);
+      hoja.deleteRow(fila);
+      return resp({ status: "ok", message: "Eliminado" }, callback);
+    }
+
+    // ── EDITAR ASISTENCIA FINAL (cambiar estados REVISION) ──
+    if (accion === "editarAsistencia") {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const hoja = ss.getSheetByName("ASISTENCIA_FINAL");
+      const fila = parseInt(p.fila || "0");
+      if (fila < 2) return resp({ status: "error", message: "Fila inválida" }, callback);
+      if (p.lugar !== undefined) hoja.getRange(fila, 3).setValue(p.lugar);
+      if (p.hora_inicio !== undefined) hoja.getRange(fila, 4).setValue(p.hora_inicio);
+      if (p.hora_fin !== undefined) hoja.getRange(fila, 5).setValue(p.hora_fin);
+      if (p.estado !== undefined) hoja.getRange(fila, 8).setValue(p.estado);
+      return resp({ status: "ok", message: "Asistencia actualizada" }, callback);
+    }
+
+    // ── ESTADOS DESDE LEYENDA ──
+    if (accion === "listarEstados") {
+      const ss = SpreadsheetApp.openById(SHEET_ID);
+      const hojaLey = ss.getSheetByName("LEYENDA");
+      const estados = [];
+      if (hojaLey && hojaLey.getLastRow() > 1) {
+        const dat = hojaLey.getRange(2,1,hojaLey.getLastRow()-1,2).getValues();
+        dat.forEach(function(r) { if (r[1]) estados.push(String(r[1]).trim()); });
+      }
+      return resp({ status: "ok", estados: estados }, callback);
+    }
+
+    // ── LUGARES ──
+    if (accion === "listarLugares") {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const hLug = ss.getSheetByName(HOJA_LUGARES);
+      const datos = hLug.getLastRow() <= 1 ? [] : hLug.getRange(2,1,hLug.getLastRow()-1,1).getValues();
+      const lugares = datos.filter(r => r[0]).map(r => String(r[0]));
+      return resp({ status: "ok", lugares }, callback);
+    }
+
+    if (accion === "agregarLugar") {
+      const lugar = decodeURIComponent(p.lugar || "").trim();
+      if (!lugar) return resp({ status: "error", message: "Falta el lugar" }, callback);
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const hLug = ss.getSheetByName(HOJA_LUGARES);
+      hLug.appendRow([lugar]);
+      return resp({ status: "ok", message: "Lugar agregado" }, callback);
+    }
+
+    if (accion === "eliminarLugar") {
+      const lugar = decodeURIComponent(p.lugar || "").trim();
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const hLug = ss.getSheetByName(HOJA_LUGARES);
+      const datos = hLug.getDataRange().getValues();
+      for (let i = 1; i < datos.length; i++) {
+        if (String(datos[i][0]).trim() === lugar) {
+          hLug.deleteRow(i + 1);
+          return resp({ status: "ok", message: "Eliminado" }, callback);
+        }
+      }
+      return resp({ status: "error", message: "No encontrado" }, callback);
+    }
+
+    // ── CAMBIAR PIN ACCESO (B3) ──
+    if (accion === "cambiarPinAcceso") {
+      const ss = SpreadsheetApp.openById(SHEET_ID);
+      const hConf = ss.getSheetByName("Config");
+      if (!hConf) return resp({ status: "error", message: "No existe hoja Config" }, callback);
+      hConf.getRange("B3").setValue(decodeURIComponent(p.pin || ""));
+      return resp({ status: "ok", message: "PIN actualizado" }, callback);
+    }
+
+    // ── PIN DE ACCESO ──
+    if (accion === "obtenerPin") {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const hConf = ss.getSheetByName("Config");
+      let pinAdmin = "2002";
+      let pinAcceso = "1111";
+      if (hConf) {
+        const pa = hConf.getRange("B2").getValue();
+        const pb = hConf.getRange("B3").getValue();
+        if (pa) pinAdmin = String(pa);
+        if (pb) pinAcceso = String(pb);
+      }
+      return resp({ status: "ok", pin: pinAdmin, acceso: pinAcceso }, callback);
+    }
+
+    // ── VALIDAR PIN ACCESO ──
+    if (accion === "validarAcceso") {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const hConf = ss.getSheetByName("Config");
+      let pinAcceso = "1111";
+      if (hConf) {
+        const pb = hConf.getRange("B3").getValue();
+        if (pb) pinAcceso = String(pb);
+      }
+      const valido = String(p.pin || "") === pinAcceso;
+      return resp({ status: "ok", valido: valido }, callback);
+    }
+
+    return resp({ status: "ok", message: "Script activo - SUTRAN UDLL" }, callback);
+
+  } catch(err) {
+    return resp({ status: "error", message: err.toString() }, callback);
   }
+}
 
-  // Deshabilitar boton para evitar duplicados
-  var btnGuardar = document.getElementById('btn-guardar-rm');
-  if (btnGuardar) {
-    if (btnGuardar.disabled) return;
-    btnGuardar.disabled = true;
-    btnGuardar.textContent = 'Guardando...';
-  }
+// ── Helper formato hora ──
+function formatHora(val) {
+  try {
+    if (!val) return "";
+    if (val instanceof Date) {
+      return Utilities.formatDate(val, Session.getScriptTimeZone(), "HH:mm");
+    }
+    const str = String(val);
+    if (str.includes(":")) return str.substring(0, 5);
+    return str;
+  } catch(e) { return String(val); }
+}
 
-  // Convertir fecha de yyyy-mm-dd a dd/MM/yyyy
-  var fp = fechaInput.split('-');
-  var fecha = fp[2] + '/' + fp[1] + '/' + fp[0];
-
-  var estado = document.getElementById('rm-estado');
-  estado.textContent = 'Guardando...';
-
-  fetchJSON(SCRIPT_URL + '?accion=registroManual' +
-    '&trabajador=' + encodeURIComponent(trabajador) +
-    '&lugar=' + encodeURIComponent(lugar) +
-    '&fecha=' + encodeURIComponent(fecha) +
-    '&hora=' + encodeURIComponent(hora) +
-    '&tipo=' + encodeURIComponent(tipo) +
-    '&obs=' + encodeURIComponent(obs)
-  ).then(function(data) {
-    if (data.status === 'ok') {
-      estado.textContent = 'Registro guardado correctamente';
-      estado.style.color = 'var(--green)';
-      setTimeout(function(){ estado.textContent = ''; }, 3000);
-      document.getElementById('rm-hora').value = '';
-      document.getElementById('rm-obs').value = '';
-      cargarTablaRegistroManual();
+function doPost(e) {
+  try {
+    let data = {};
+    if (e.postData && e.postData.contents) {
+      data = JSON.parse(e.postData.contents);
     } else {
-      estado.textContent = 'Error: ' + data.message;
-      estado.style.color = 'var(--red)';
+      data = e.parameter || {};
     }
-    if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = 'Guardar Registro'; }
-  }).catch(function(e) {
-    estado.textContent = 'Error: ' + e.message;
-    estado.style.color = 'var(--red)';
-    if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = 'Guardar Registro'; }
-  });
-}
-
-function cargarTablaRegistroManual() {
-  var mes = document.getElementById('g-mes').value;
-  var anio = document.getElementById('g-anio').value;
-  var tbody = document.getElementById('rm-tabla');
-  tbody.innerHTML = '<tr><td colspan="7" class="loading-cell">Cargando...</td></tr>';
-  fetchJSON(SCRIPT_URL + '?accion=listarRegistroManual&mes=' + mes + '&anio=' + anio).then(function(data) {
-    var registros = data.registros || [];
-    if (registros.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="loading-cell">Sin registros manuales este mes</td></tr>';
-      return;
+    if (data.accion === "foto" && data.fila && data.foto) {
+      const ss = SpreadsheetApp.openById(SHEET_ID);
+      const hReg = ss.getSheetByName("REGISTROS");
+      const folder = DriveApp.getFolderById(FOLDER_ID);
+      let base64 = data.foto;
+      if (base64.includes(",")) base64 = base64.split(",")[1];
+      const blob = Utilities.newBlob(Utilities.base64Decode(base64), "image/jpeg", "foto_"+data.fila+".jpg");
+      const file = folder.createFile(blob);
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      if (hReg) hReg.getRange(parseInt(data.fila), 10).setValue(file.getUrl());
     }
-    tbody.innerHTML = '';
-    registros.forEach(function(r) {
-      var tr = document.createElement('tr');
-      tr.innerHTML =
-        '<td>'+r.trabajador+'</td>'+
-        '<td>'+r.lugar+'</td>'+
-        '<td>'+r.fecha+'</td>'+
-        '<td>'+r.hora+'</td>'+
-        '<td>'+r.tipo+'</td>'+
-        '<td>'+r.obs+'</td>'+
-        '<td></td>';
-      var btn = document.createElement('button');
-      btn.className = 'btn btn-red';
-      btn.style.cssText = 'height:28px;font-size:11px';
-      btn.textContent = 'Eliminar';
-      btn.onclick = function(){ eliminarRegistroManual(r.fila); };
-      tr.lastElementChild.appendChild(btn);
-      tbody.appendChild(tr);
-    });
-  });
+  } catch(err) { Logger.log("doPost error: " + err.toString()); }
+  return ContentService.createTextOutput(JSON.stringify({status:"ok"})).setMimeType(ContentService.MimeType.JSON);
 }
 
-function eliminarRegistroManual(fila) {
-  if (!confirm('Eliminar este registro manual?')) return;
-  fetchJSON(SCRIPT_URL + '?accion=eliminarRegistroManual&fila=' + fila).then(function(data) {
-    if (data.status === 'ok') cargarTablaRegistroManual();
-    else alert('Error: ' + data.message);
-  });
-}
-
-// LUGARES EN PANEL
-function cargarTablaLugares() {
-  document.getElementById('lug-tabla').innerHTML = '<tr><td colspan="2" class="loading-cell">Cargando...</td></tr>';
-  fetchJSON(SCRIPT_URL + '?accion=listarLugares').then(function(data) {
-    var lugares = data.lugares || [];
-    if (lugares.length === 0) {
-      document.getElementById('lug-tabla').innerHTML = '<tr><td colspan="2" class="loading-cell">Sin lugares</td></tr>';
-      return;
-    }
-    var tbody = document.getElementById('lug-tabla');
-    tbody.innerHTML = '';
-    lugares.forEach(function(l) {
-      var tr = document.createElement('tr');
-      var tdNom = document.createElement('td');
-      tdNom.textContent = l;
-      var tdAcc = document.createElement('td');
-      var btn = document.createElement('button');
-      btn.className = 'btn btn-red';
-      btn.style.cssText = 'height:28px;font-size:11px';
-      btn.textContent = 'Eliminar';
-      btn.onclick = function() { eliminarLugarPanel(l); };
-      tdAcc.appendChild(btn);
-      tr.appendChild(tdNom);
-      tr.appendChild(tdAcc);
-      tbody.appendChild(tr);
-    });
-  }).catch(function(e) {
-    document.getElementById('lug-tabla').innerHTML = '<tr><td colspan="2" class="loading-cell" style="color:var(--red)">Error: ' + e.message + '</td></tr>';
-  });
-}
-
-function agregarLugarPanel() {
-  var nom = document.getElementById('lug-nuevo').value.trim();
-  if (!nom) { alert('Escribe el nombre del lugar'); return; }
-  fetchJSON(SCRIPT_URL + '?accion=agregarLugar&lugar=' + encodeURIComponent(nom)).then(function(data) {
-    if (data.status === 'ok') {
-      document.getElementById('lug-nuevo').value = '';
-      cargarTablaLugares();
-    } else alert('Error: ' + data.message);
-  }).catch(function(e) { alert('Error: ' + e.message); });
-}
-
-function eliminarLugarPanel(lugar) {
-  if (!confirm('Eliminar lugar: ' + lugar + '?')) return;
-  fetchJSON(SCRIPT_URL + '?accion=eliminarLugar&lugar=' + encodeURIComponent(lugar)).then(function(data) {
-    if (data.status === 'ok') cargarTablaLugares();
-    else alert('Error: ' + data.message);
-  }).catch(function(e) { alert('Error: ' + e.message); });
-}
-
-// PERSONAL
-function cargarTablaPersonal() {
-  document.getElementById('per-tabla').innerHTML = '<tr><td colspan="7" class="loading-cell">Cargando...</td></tr>';
-  fetchJSON(SCRIPT_URL + '?accion=listarPersonal').then(function(data) {
-    personalData = data.personal || [];
-    poblarSelectores(personalData);
-    document.getElementById('per-tabla').innerHTML = personalData.length === 0
-      ? '<tr><td colspan="7" class="loading-cell">Sin personal</td></tr>'
-      : personalData.map(function(p) {
-          var horario = (p.horario_inicio && p.horario_fin) ? (p.horario_inicio + ' - ' + p.horario_fin) : '<span style="color:var(--text3);font-style:italic">Sin configurar</span>';
-          var lugar = p.lugar_habitual || '<span style="color:var(--text3);font-style:italic">-</span>';
-          return '<tr><td class="mono">' + p.nombre_sistema + '</td>' +
-            '<td>' + (p.nombre_completo||' ') + '</td>' +
-            '<td class="mono">' + (p.dni||' ') + '</td>' +
-            '<td>' + (p.cargo||' ') + '</td>' +
-            '<td style="font-size:11px">' + horario + '</td>' +
-            '<td style="font-size:11px">' + lugar + '</td>' +
-            '<td><button class="btn" style="height:24px;font-size:11px;padding:0 8px;background:#0EA5E9;color:white" onclick="abrirEditorHorarioBase(\'' + p.nombre_sistema + '\',\'' + (p.horario_inicio||'') + '\',\'' + (p.horario_fin||'') + '\',\'' + (p.lugar_habitual||'') + '\')">Horario</button></td></tr>';
-        }).join('');
-  }).catch(function(e) {
-    document.getElementById('per-tabla').innerHTML = '<tr><td colspan="7" class="loading-cell" style="color:var(--red)">Error: ' + e.message + '</td></tr>';
-  });
-}
-
-function abrirEditorHorarioBase(nombre, hi, hf, lugar) {
-  var nhi = prompt('Horario INICIO para ' + nombre + ' (HH:MM o vacio para quitar):', hi);
-  if (nhi === null) return;
-  var nhf = prompt('Horario FIN para ' + nombre + ':', hf);
-  if (nhf === null) return;
-  var nlugar = prompt('Lugar habitual:', lugar);
-  if (nlugar === null) return;
-  fetchJSON(SCRIPT_URL + '?accion=editarHorarioBase&nombre_sistema=' + encodeURIComponent(nombre) +
-    '&horario_inicio=' + encodeURIComponent(nhi.trim()) +
-    '&horario_fin=' + encodeURIComponent(nhf.trim()) +
-    '&lugar_habitual=' + encodeURIComponent(nlugar.trim())
-  ).then(function(data) {
-    if (data.status === 'ok') {
-      alert('Horario base actualizado');
-      cargarTablaPersonal();
-    } else alert('Error: ' + data.message);
-  });
-}
-
-function agregarPersonal() {
-  var sistema = document.getElementById('per-sistema').value.trim();
-  var completo = document.getElementById('per-completo').value.trim();
-  var dni = document.getElementById('per-dni').value.trim();
-  var cargo = document.getElementById('per-cargo').value.trim();
-  if (!sistema) { alert('El nombre sistema es obligatorio'); return; }
-  var url = SCRIPT_URL + '?accion=agregarPersonal&nombre_sistema=' + encodeURIComponent(sistema) +
-    '&nombre_completo=' + encodeURIComponent(completo) + '&dni=' + encodeURIComponent(dni) + '&cargo=' + encodeURIComponent(cargo);
-  fetchJSON(url).then(function(data) {
-    if (data.status === 'ok') {
-      ['per-sistema','per-completo','per-dni','per-cargo'].forEach(function(id){document.getElementById(id).value='';});
-      cargarTablaPersonal();
-    } else alert('Error: ' + data.message);
-  }).catch(function(e){ alert('Error: ' + e.message); });
-}
-
-function eliminarPersonal(nombre) {
-  if (!confirm('Eliminar a ' + nombre + '?')) return;
-  fetchJSON(SCRIPT_URL + '?accion=eliminarPersonal&nombre_sistema=' + encodeURIComponent(nombre)).then(function(data) {
-    if (data.status === 'ok') cargarTablaPersonal();
-    else alert('Error: ' + data.message);
-  }).catch(function(e){ alert('Error: ' + e.message); });
-}
-
-// BIOM TRICO
-function autoFillDni() {
-  var sel = document.getElementById('bio-nombre');
-  var dniInput = document.getElementById('bio-dni');
-  if (!sel || !dniInput) return;
-  var op = sel.selectedOptions[0];
-  if (op && op.getAttribute('data-dni')) {
-    dniInput.value = op.getAttribute('data-dni');
+function resp(obj, cb) {
+  if (cb) {
+    return ContentService
+      .createTextOutput(cb + '(' + JSON.stringify(obj) + ')')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
   }
+  const output = ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+  return output;
 }
 
-function agregarBiometrico() {
-  var nom = document.getElementById('bio-nombre').value;
-  var dni = document.getElementById('bio-dni') ? document.getElementById('bio-dni').value.trim() : '';
-  var fecha = document.getElementById('bio-fecha').value;
-  var hora = document.getElementById('bio-hora').value;
-  var tipo = document.getElementById('bio-tipo').value;
-  if (!nom || !fecha || !hora) { alert('Completa nombre, fecha y hora'); return; }
-  var fechaFmt = fecha.split('-').reverse().join('/');
-  fetchJSON(SCRIPT_URL + '?accion=agregarBiometrico&nombre=' + encodeURIComponent(nom) +
-    '&dni=' + encodeURIComponent(dni) +
-    '&fecha=' + encodeURIComponent(fechaFmt) + '&hora=' + encodeURIComponent(hora) + '&tipo=' + encodeURIComponent(tipo)
-  ).then(function(data) {
-    if (data.status === 'ok') {
-      document.getElementById('bio-fecha').value = '';
-      document.getElementById('bio-hora').value = '';
-      if (document.getElementById('bio-dni')) document.getElementById('bio-dni').value = '';
-      cargarTablaBio();
-    } else alert('Error: ' + data.message);
-  }).catch(function(e) { alert('Error: ' + e.message); });
+function doOptions(e) {
+  return ContentService
+    .createTextOutput("")
+    .setMimeType(ContentService.MimeType.TEXT);
 }
 
-function cargarBiometricoMasivo() {
-  var texto = document.getElementById('bio-masivo').value.trim();
-  if (!texto) { alert('Pega datos primero'); return; }
+function doOptions(e) {
+  return ContentService
+    .createTextOutput('')
+    .setMimeType(ContentService.MimeType.TEXT);
+}
 
-  var lineas = texto.split('\n').filter(function(l){ return l.trim(); });
-  if (lineas.length === 0) { alert('Sin datos validos'); return; }
+// ================================================
+// TUS FUNCIONES ORIGINALES (sin cambios)
+// ================================================
 
-  var btn = document.querySelector('[onclick="cargarBiometricoMasivo()"]');
-  var estado = document.getElementById('bio-masivo-estado');
-  if (btn) { btn.disabled = true; }
+function procesarProgramacion() {
+  const ss = SpreadsheetApp.openById("1qT1seHGPVjWxl5KOR4vc0Q99Ja-pnJjwEFgHOnWy4x8");
+  const hojaRaw = ss.getSheetByName("PROGRAMACION_RAW");
+  const hojaProg = ss.getSheetByName("PROGRAMACION");
+  const textoCompleto = hojaRaw.getRange("A2").getDisplayValue().toString();
+  const lineas = textoCompleto.split("\n");
+  // No borrar - agregar al final
+  let fila = hojaProg.getLastRow() + 1;
+  let fechaActual = "";
+  let lugarActual = "";
+  let seccionActual = "";
+  lineas.forEach(linea => {
+    linea = linea.replace(/^\[.*?\]\s*.*?:\s*/, "").replace(/\s+/g, " ").trim();
+    // Quitar tildes de la linea completa para evitar problemas de cruce
+    linea = linea.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    if (linea == "") return;
+    const regexFecha = /^(lunes|martes|miércoles|miercoles|jueves|viernes|sábado|sabado|domingo)\s+\d{1,2}\s+de\s+.+\s+de\s+\d{4}$/i;
+    if (regexFecha.test(linea)) {
+      const meses = {enero:0,febrero:1,marzo:2,abril:3,mayo:4,junio:5,julio:6,agosto:7,septiembre:8,octubre:9,noviembre:10,diciembre:11};
+      const partes = linea.match(/(\d{1,2})\s+de\s+(\w+)\s+de\s+(\d{4})/i);
+      if (partes) {
+        const dia = parseInt(partes[1]);
+        const mesTexto = partes[2].toLowerCase();
+        const anio = parseInt(partes[3]);
+        const mes = meses[mesTexto];
+        fechaActual = new Date(anio, mes, dia);
+      }
+      return;
+    }
+    if (linea.includes("PEAJE")) { lugarActual = linea; seccionActual = "PROGRAMADO"; return; }
+    if (linea.includes("Cinemómetro")) { lugarActual = linea; seccionActual = "PROGRAMADO"; return; }
+    if (linea.match(/compensaci[oó]n/i)) { seccionActual = "COMPENSACION"; return; }
+    if (linea.match(/descanso\s+semanal/i)) { seccionActual = "DS"; return; }
+    if (linea.match(/^conductores$/i)) { seccionActual = "DS"; return; }
+    if (linea.match(/periodo\s+vacacional/i)) { seccionActual = "V"; return; }
+    if (linea.match(/licencia/i)) { seccionActual = "LS"; return; }
+    // Detectar empresas de transporte - nombre + empresa + horario = Terminal
+    const empresasTransporte = ['Emtrafesa', 'America Express', 'ITTSA'];
+    let lineaParseada = false;
+    for (let ei = 0; ei < empresasTransporte.length; ei++) {
+      const empresa = empresasTransporte[ei];
+      const regexEmpresa = new RegExp('^(.*?)\\s+' + empresa + '\\s+de\\s+(\\d{1,2})h(\\d{2})\\s+a\\s+(\\d{1,2})h(\\d{2})', 'i');
+      const matchEmpresa = linea.match(regexEmpresa);
+      if (matchEmpresa) {
+        const nombresTexto = matchEmpresa[1].trim();
+        const inicio = matchEmpresa[2] + ':' + matchEmpresa[3];
+        const fin = matchEmpresa[4] + ':' + matchEmpresa[5];
+        const nombres = nombresTexto.split(/,| y /).map(n => n.trim()).filter(n => n != '');
+        nombres.forEach(nombre => {
+          hojaProg.getRange(fila,1).setValue(fechaActual);
+          hojaProg.getRange(fila,2).setValue(nombre);
+          hojaProg.getRange(fila,3).setValue('Terminal ' + empresa);
+          hojaProg.getRange(fila,4).setValue(inicio);
+          hojaProg.getRange(fila,5).setValue(fin);
+          hojaProg.getRange(fila,6).setValue('PROGRAMADO');
+          fila++;
+        });
+        lineaParseada = true;
+        break;
+      }
+    }
+    if (lineaParseada) return;
 
-  // Procesar cada linea individualmente con delay
-  var totalAgregados = 0;
-  var totalDuplicados = 0;
-  var errores = 0;
-  var procesados = 0;
-  var total = lineas.length;
-
-  function procesarLinea(idx) {
-    if (idx >= total) {
-      // Terminado
-      if (btn) { btn.disabled = false; btn.textContent = 'Cargar masivo'; }
-      var msg = '✅ Cargados: ' + totalAgregados + ' de ' + total;
-      if (totalDuplicados > 0) msg += ' (' + totalDuplicados + ' duplicados)';
-      if (estado) { estado.textContent = msg; estado.style.color = 'var(--green)'; }
-      document.getElementById('bio-masivo').value = '';
-      cargarTablaBio();
+        if (linea.toLowerCase().includes("comunicarse") || linea.toLowerCase().includes("coordinar") || linea.toLowerCase().includes("a las") || linea.toLowerCase().includes("luego")) {
+      let nombresTexto = linea;
+      if (linea.toLowerCase().includes("a las")) nombresTexto = linea.split(/a las/i)[0];
+      if (linea.toLowerCase().includes("comunicarse")) nombresTexto = linea.split(/comunicarse/i)[0];
+      if (linea.toLowerCase().includes("coordinar")) nombresTexto = linea.split(/coordinar/i)[0];
+      if (linea.toLowerCase().includes("luego")) nombresTexto = linea.split(/luego/i)[0];
+      const nombres = nombresTexto.split(/,| y /).map(n => n.trim()).filter(n => n != "");
+      nombres.forEach(nombre => {
+        hojaProg.getRange(fila,1).setValue(fechaActual);
+        hojaProg.getRange(fila,2).setValue(nombre);
+        hojaProg.getRange(fila,3).setValue("");
+        hojaProg.getRange(fila,4).setValue("");
+        hojaProg.getRange(fila,5).setValue("");
+        hojaProg.getRange(fila,6).setValue("REVISION");
+        fila++;
+      });
       return;
     }
 
-    var linea = lineas[idx].trim();
-    if (!linea) { procesarLinea(idx+1); return; }
 
-    var cols = linea.split('	');
-    if (cols.length < 3) { procesarLinea(idx+1); return; }
-
-    var dni = cols[0].trim();
-    var nombre = cols[1].trim();
-    var fechaHora = cols[2].trim();
-    var partes = fechaHora.split(' ');
-    var fechaRaw = partes[0] || '';
-    var horaRaw = partes[1] ? partes[1].substring(0,5) : (cols[3] ? cols[3].trim().substring(0,5) : '');
-    var fp = fechaRaw.split('/');
-    var fechaFmt = fp.length === 3 ? fp[0].padStart(2,'0')+'/'+fp[1].padStart(2,'0')+'/'+fp[2] : fechaRaw;
-    var tipo = cols[3] && !cols[3].includes(':') ? cols[3].trim() : (cols[4] ? cols[4].trim() : 'Entrada');
-
-    if (!nombre || !fechaFmt || !horaRaw) { procesarLinea(idx+1); return; }
-
-    var pct = Math.round(((idx+1)/total)*100);
-    if (btn) btn.textContent = 'Cargando ' + pct + '%... (' + (idx+1) + '/' + total + ')';
-    if (estado) { estado.textContent = 'Procesando registro ' + (idx+1) + ' de ' + total; estado.style.color = 'var(--cyan)'; }
-
-    fetchJSON(SCRIPT_URL + '?accion=agregarBiometrico&dni=' + encodeURIComponent(dni) +
-      '&nombre=' + encodeURIComponent(nombre) +
-      '&fecha=' + encodeURIComponent(fechaFmt) +
-      '&hora=' + encodeURIComponent(horaRaw) +
-      '&tipo=' + encodeURIComponent(tipo)
-    ).then(function(data) {
-      if (data.status === 'ok') totalAgregados++;
-      else totalDuplicados++;
-      setTimeout(function(){ procesarLinea(idx+1); }, 200);
-    }).catch(function() {
-      errores++;
-      setTimeout(function(){ procesarLinea(idx+1); }, 200);
-    });
-  }
-
-  procesarLinea(0);
-}
-
-function cargarTablaBio() {
-  document.getElementById('bio-tabla').innerHTML = '<tr><td colspan="7" class="loading-cell">Cargando...</td></tr>';
-  fetchJSON(SCRIPT_URL + '?accion=leerBiometrico').then(function(data) {
-    var rows = data.registros || [];
-    document.getElementById('bio-tabla').innerHTML = rows.length === 0
-      ? '<tr><td colspan="7" class="loading-cell">Sin registros</td></tr>'
-      : rows.map(function(r) {
-          return '<tr><td class="mono" style="color:var(--text3)">' + r.fila + '</td>' +
-            '<td class="mono">' + (r.dni||' ') + '</td><td>' + r.nombre + '</td>' +
-            '<td class="mono">' + r.fecha + '</td>' +
-            '<td class="mono" style="color:var(--green)">' + r.hora + '</td>' +
-            '<td>' + (r.tipo||' ') + '</td>' +
-            '<td><button class="btn btn-red" style="height:26px;font-size:11px" data-fila="' + r.fila + '" onclick="eliminarBio(this.getAttribute(\'data-fila\'))"> </button></td></tr>';
-        }).join('');
-  }).catch(function(e) {
-    document.getElementById('bio-tabla').innerHTML = '<tr><td colspan="7" class="loading-cell" style="color:var(--red)">Error: ' + e.message + '</td></tr>';
-  });
-}
-
-function eliminarBio(fila) {
-  if (!confirm('Eliminar este registro?')) return;
-  fetchJSON(SCRIPT_URL + '?accion=eliminarBiometrico&fila=' + fila).then(function(data) {
-    if (data.status === 'ok') cargarTablaBio();
-    else alert('Error: ' + data.message);
-  }).catch(function(e){ alert('Error: ' + e.message); });
-}
-
-// EDITAR PROGRAMACI N
-function cargarTablaEditProg() {
-  document.getElementById('ep-tabla').innerHTML = '<tr><td colspan="8" class="loading-cell">Cargando...</td></tr>';
-  fetchJSON(SCRIPT_URL + '?accion=listarLugares').then(function(dataLug) {
-    window._lugaresCache = dataLug.lugares || [];
-    return fetchJSON(SCRIPT_URL + '?accion=leerProgramacion');
-  }).then(function(data) {
-    progData = data.programacion || [];
-    filtrarProg();
-  }).catch(function(e) {
-    document.getElementById('ep-tabla').innerHTML = '<tr><td colspan="8" class="loading-cell" style="color:var(--red)">Error: ' + e.message + '</td></tr>';
-  });
-}
-
-function getLugaresOpts(seleccionado) {
-  const lugares = window._lugaresCache || [];
-  let opts = '<option value="">Sin lugar</option>';
-  lugares.forEach(function(l) {
-    opts += '<option value="' + l + '"' + (l === seleccionado ? ' selected' : '') + '>' + l + '</option>';
-  });
-  // Si el lugar actual no esta en la lista, agregarlo
-  if (seleccionado && !lugares.includes(seleccionado)) {
-    opts += '<option value="' + seleccionado + '" selected>' + seleccionado + '</option>';
-  }
-  return opts;
-}
-
-function filtrarProg() {
-  var filtro = document.getElementById('ep-filtro').value;
-  var rows = filtro ? progData.filter(function(r){return r.estado===filtro;}) : progData;
-  var ESTADOS = window._estadosCache || ['PROGRAMADO','DS','CP','REVISION','T','FE','FR','CO','CPSS','DM','LM','LP','LO','LUB','LS','V','C'];
-  var lugares = window._lugaresCache || [];
-  var tbody = document.getElementById('ep-tabla');
-
-  if (rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="loading-cell">Sin registros</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = '';
-  rows.forEach(function(r) {
-    var tr = document.createElement('tr');
-    if (r.estado === 'REVISION') tr.style.background = 'rgba(239,68,68,0.05)';
-
-    // Opciones estado
-    var optsEstado = ESTADOS.map(function(e){
-      return '<option value="'+e+'"'+(r.estado===e?' selected':'')+'>'+e+'</option>';
-    }).join('');
-
-    // Opciones lugar
-    var optsLugar = '<option value="">Sin lugar</option>';
-    lugares.forEach(function(l){
-      optsLugar += '<option value="'+l+'"'+(r.lugar===l?' selected':'')+'>'+l+'</option>';
-    });
-    if (r.lugar && lugares.indexOf(r.lugar) === -1) {
-      optsLugar += '<option value="'+r.lugar+'" selected>'+r.lugar+'</option>';
+    // Formato: "Abner a las 08h30 en oficina" o "Abner de 08h30 a oficina"
+    const regexHorarioLugar = /^(.*?)\s+(?:a las|de)\s+(\d{1,2})h(\d{2})\s+(?:en|a)\s+(.+)$/i;
+    const matchLugar = linea.match(regexHorarioLugar);
+    if (matchLugar && !matchLugar[4].match(/\d{1,2}h\d{2}/)) {
+      const nombresTexto = matchLugar[1].trim();
+      const inicio = matchLugar[2] + ":" + matchLugar[3];
+      const lugar = matchLugar[4].trim();
+      const nombres = nombresTexto.split(/,| y /).map(n => n.trim()).filter(n => n != "");
+      nombres.forEach(nombre => {
+        hojaProg.getRange(fila,1).setValue(fechaActual);
+        hojaProg.getRange(fila,2).setValue(nombre);
+        hojaProg.getRange(fila,3).setValue(lugar);
+        hojaProg.getRange(fila,4).setValue(inicio);
+        hojaProg.getRange(fila,5).setValue("");
+        hojaProg.getRange(fila,6).setValue("PROGRAMADO");
+        fila++;
+      });
+      return;
     }
 
-    tr.innerHTML =
-      '<td class="mono" style="color:var(--text3)">'+r.fila+'</td>'+
-      '<td class="mono">'+r.fecha+'</td>'+
-      '<td>'+r.nombre+'</td>'+
-      '<td><select id="lug'+r.fila+'" style="height:34px;font-size:12px;width:140px">'+optsLugar+'</select></td>'+
-      '<td><input type="text" id="ini'+r.fila+'" value="'+(r.hora_inicio||'')+'" style="width:65px;height:34px;font-size:12px;font-family:monospace" placeholder="00:00"></td>'+
-      '<td><input type="text" id="fin'+r.fila+'" value="'+(r.hora_fin||'')+'" style="width:65px;height:34px;font-size:12px;font-family:monospace" placeholder="00:00"></td>'+
-      '<td><select id="est'+r.fila+'" style="height:34px;font-size:12px">'+optsEstado+'</select></td>'+
-      '<td style="display:flex;gap:6px;padding:4px"></td>';
+    // Si hay seccion activa (DS, CP, etc) y la linea es lista de nombres sin horario
+    if (seccionActual && seccionActual !== "" && !linea.match(/\d{1,2}h\d{2}/)) {
+      const estadoSec = seccionActual === "COMPENSACION" ? "CP" : seccionActual;
+      const nombres = linea.split(/,| y /).map(n => n.trim()).filter(n => n !== "");
+      if (nombres.length > 0) {
+        nombres.forEach(function(nombre) {
+          hojaProg.getRange(fila,1).setValue(fechaActual);
+          hojaProg.getRange(fila,2).setValue(nombre);
+          hojaProg.getRange(fila,3).setValue("");
+          hojaProg.getRange(fila,4).setValue("");
+          hojaProg.getRange(fila,5).setValue("");
+          hojaProg.getRange(fila,6).setValue(estadoSec);
+          fila++;
+        });
+        return;
+      }
+    }
 
-    // Boton guardar
-    var btnG = document.createElement('button');
-    btnG.className = 'btn btn-primary';
-    btnG.style.cssText = 'height:34px;font-size:12px';
-    btnG.textContent = 'Guardar';
-    btnG.onclick = function(){ guardarProg(r.fila, btnG); };
-
-    // Boton eliminar
-    var btnE = document.createElement('button');
-    btnE.className = 'btn btn-red';
-    btnE.style.cssText = 'height:34px;font-size:12px';
-    btnE.textContent = 'Eliminar';
-    btnE.onclick = function(){ eliminarProg(r.fila); };
-
-    tr.lastElementChild.appendChild(btnG);
-    tr.lastElementChild.appendChild(btnE);
-    tbody.appendChild(tr);
+    // Formato original: "Nombres de 08h30 a 19h00"
+    const regexHorario = /(.*?)\s+de\s+(\d{1,2})h(\d{2})\s+a\s+(\d{1,2})h(\d{2})/i;
+    const match = linea.match(regexHorario);
+    if (match) {
+      if (linea.toLowerCase().includes("comunicarse")) return;
+      const nombresTexto = match[1].trim();
+      const inicio = match[2] + ":" + match[3];
+      const fin = match[4] + ":" + match[5];
+      const nombres = nombresTexto.split(/,| y /).map(n => n.trim()).filter(n => n != "");
+      nombres.forEach(nombre => {
+        hojaProg.getRange(fila,1).setValue(fechaActual);
+        hojaProg.getRange(fila,2).setValue(nombre);
+        hojaProg.getRange(fila,3).setValue(lugarActual);
+        hojaProg.getRange(fila,4).setValue(inicio);
+        hojaProg.getRange(fila,5).setValue(fin);
+        hojaProg.getRange(fila,6).setValue("PROGRAMADO");
+        fila++;
+      });
+    }
+    if (seccionActual == "DS") {
+      if (linea.toLowerCase() == "conductores" || linea.toLowerCase() == "conductor" || linea.toLowerCase() == "descanso semanal" || linea.toLowerCase() == "periodo vacacional" || linea.toLowerCase() == "licencia por onomástico" || linea.toLowerCase() == "licencia por onomastico" || linea.toLowerCase() == "compensación" || linea.toLowerCase() == "compensacion") return;
+      const nombres = linea.split(/,| y /).map(n => n.trim()).filter(n => n != "");
+      nombres.forEach(nombre => {
+        hojaProg.getRange(fila,1).setValue(fechaActual);
+        hojaProg.getRange(fila,2).setValue(nombre);
+        hojaProg.getRange(fila,3).setValue("DESCANSO");
+        hojaProg.getRange(fila,4).setValue("");
+        hojaProg.getRange(fila,5).setValue("");
+        hojaProg.getRange(fila,6).setValue("DS");
+        fila++;
+      });
+      return;
+    }
+    if (seccionActual == "COMPENSACION") {
+      const nombres = linea.replace(/del\s+\d{2}\/\d{2}\/\d{4}/gi, "").split(/,| y /).map(n => n.trim()).filter(n => n != "");
+      nombres.forEach(nombre => {
+        hojaProg.getRange(fila,1).setValue(fechaActual);
+        hojaProg.getRange(fila,2).setValue(nombre);
+        hojaProg.getRange(fila,3).setValue("COMPENSACION");
+        hojaProg.getRange(fila,6).setValue("CP");
+        fila++;
+      });
+    }
   });
 }
 
-function guardarProg(fila, btn) {
-  var lugar = document.getElementById('lug'+fila).value;
-  var ini = document.getElementById('ini'+fila).value;
-  var fin = document.getElementById('fin'+fila).value;
-  var est = document.getElementById('est'+fila).value;
-  var url = SCRIPT_URL + '?accion=editarProgramacion&fila=' + fila +
-    '&lugar=' + encodeURIComponent(lugar) + '&hora_inicio=' + encodeURIComponent(ini) +
-    '&hora_fin=' + encodeURIComponent(fin) + '&estado=' + encodeURIComponent(est);
-  fetchJSON(url).then(function(data) {
-    if (data.status === 'ok') {
-      btn.textContent = ' ';
-      setTimeout(function(){btn.textContent=' ';}, 1500);
-    } else alert('Error: ' + data.message);
-  }).catch(function(e){ alert('Error: ' + e.message); });
+function generarAsistenciaFinal(mesFiltro, anioFiltro) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  mesFiltro = mesFiltro || new Date().getMonth() + 1;
+  anioFiltro = anioFiltro || new Date().getFullYear();
+  const hojaProg = ss.getSheetByName("PROGRAMACION");
+  const hojaReg = ss.getSheetByName("MARCACIONES_UNIFICADAS");
+  const hojaFinal = ss.getSheetByName("ASISTENCIA_FINAL");
+  const hojaLey = ss.getSheetByName("LEYENDA");
+
+  // Leer estados de ausencia desde LEYENDA (no cuentan como asistencia)
+  // Por defecto: DS, CP y licencias no cuentan como A
+  const estadosAusencia = ["DS","CP","FE","FR","DM","LM","LP","LO","LUB","LS","V","CO","CPSS"];
+  if (hojaLey && hojaLey.getLastRow() > 1) {
+    // Usar los codigos de la leyenda - todos excepto A y T son ausencia/no-trabajo
+  }
+  // Estados que se copian directo sin buscar marcaciones
+  const estadosSinMarcacion = ["DS","CP","FE","FR","DM","LM","LP","LO","LUB","LS","V","CO","CPSS"];
+
+  hojaFinal.getRange(2,1,10000,8).clearContent();
+
+  const prog = hojaProg.getDataRange().getValues();
+  const registros = hojaReg.getDataRange().getValues();
+
+  function convertirMinutos(hora) {
+    if (!hora) return -1;
+    if (hora instanceof Date) return hora.getHours() * 60 + hora.getMinutes();
+    var n = parseFloat(hora);
+    if (!isNaN(n) && n >= 0 && n < 1) return Math.round(n * 1440);
+    var s = hora.toString().trim();
+    if (s.startsWith(":")) s = s.substring(1);
+    // Quitar segundos si vienen (HH:MM:SS)
+    var p = s.split(":");
+    if (p.length >= 2) {
+      var h = parseInt(p[0]) || 0;
+      var m = parseInt(p[1]) || 0;
+      return h * 60 + m;
+    }
+    return -1;
+  }
+
+  function formatFecha(fecha) {
+    var d = new Date(fecha);
+    d.setHours(0,0,0,0);
+    return Utilities.formatDate(d, Session.getScriptTimeZone(), "dd/MM/yyyy");
+  }
+
+  let filaFinal = 2;
+
+  for (let i = 1; i < prog.length; i++) {
+    const fecha      = prog[i][0];
+    const nombre     = prog[i][1];
+    const lugar      = prog[i][2];
+    const horaInicio = prog[i][3];
+    const horaFin    = prog[i][4];
+    const estado     = prog[i][5];
+
+    if (!fecha || !nombre) continue;
+
+    // Filtrar por mes y año
+    const fechaObj = new Date(fecha);
+    if (fechaObj.getMonth() + 1 !== mesFiltro || fechaObj.getFullYear() !== anioFiltro) continue;
+
+    if (estadosSinMarcacion.indexOf(estado) >= 0) {
+      hojaFinal.getRange(filaFinal,1).setValue(fecha);
+      hojaFinal.getRange(filaFinal,2).setValue(nombre);
+      hojaFinal.getRange(filaFinal,3).setValue(lugar);
+      hojaFinal.getRange(filaFinal,4).setValue(horaInicio);
+      hojaFinal.getRange(filaFinal,5).setValue(horaFin);
+      hojaFinal.getRange(filaFinal,8).setValue(estado);
+      filaFinal++;
+      continue;
+    }
+    // REVISION: buscar marcaciones igual que PROGRAMADO
+    // Si tiene marcaciones -> A, si no -> REVISION
+
+    const minInicio = convertirMinutos(horaInicio);
+    const minFin    = convertirMinutos(horaFin);
+    if (minInicio === -1 || minFin === -1) {
+      hojaFinal.getRange(filaFinal,1).setValue(fecha);
+      hojaFinal.getRange(filaFinal,2).setValue(nombre);
+      hojaFinal.getRange(filaFinal,3).setValue(lugar);
+      hojaFinal.getRange(filaFinal,4).setValue(horaInicio);
+      hojaFinal.getRange(filaFinal,5).setValue(horaFin);
+      hojaFinal.getRange(filaFinal,8).setValue("F");
+      filaFinal++;
+      continue;
+    }
+
+    const turnoCruzado = minFin < minInicio;
+    const esMadrugada = minInicio >= 0 && minInicio <= 240;
+    const fechaProgTexto = formatFecha(fecha);
+
+    let siguienteDia = new Date(fecha);
+    siguienteDia.setDate(siguienteDia.getDate() + 1);
+    siguienteDia.setHours(0,0,0,0);
+    const siguienteTexto = Utilities.formatDate(siguienteDia, Session.getScriptTimeZone(), "dd/MM/yyyy");
+
+    let marcaciones = [];
+    let marcacionesInfo = {};
+
+    for (let j = 1; j < registros.length; j++) {
+      const nombreReg = String(registros[j][1]).trim().toLowerCase();
+      if (nombreReg !== nombre.toString().trim().toLowerCase()) continue;
+
+      const fechaReg = registros[j][0];
+      const horaReg  = registros[j][2];
+      if (!horaReg) continue;
+
+      const fechaRegTexto = formatFecha(fechaReg);
+      const minMarcacion  = convertirMinutos(horaReg);
+      if (minMarcacion === -1) continue;
+
+      // Calcular dia anterior
+      let diaAnterior = new Date(fecha);
+      diaAnterior.setDate(diaAnterior.getDate() - 1);
+      const diaAnteriorTexto = Utilities.formatDate(diaAnterior, Session.getScriptTimeZone(), "dd/MM/yyyy");
+
+      if (!turnoCruzado) {
+        // Turno normal mismo dia
+        if (fechaProgTexto === fechaRegTexto &&
+            minMarcacion >= (minInicio - 120) &&
+            minMarcacion <= (minFin + 240)) {
+          marcaciones.push(horaReg);
+          marcacionesInfo[horaReg] = {dia: 1, min: minMarcacion};
+        }
+        // Turno madrugada (00:00-04:00): buscar entrada en dia anterior desde 22:00
+        else if (esMadrugada && diaAnteriorTexto === fechaRegTexto && minMarcacion >= 1350) {
+          marcaciones.push(horaReg);
+          marcacionesInfo[horaReg] = {dia: 0, min: minMarcacion};
+        }
+      } else {
+        // Turno cruzado (ej 17:00 a 01:00): registrado en dia que EMPIEZA
+        // Buscar entrada en mismo dia desde minInicio
+        if (fechaProgTexto === fechaRegTexto && minMarcacion >= (minInicio - 120)) {
+          marcaciones.push(horaReg);
+          marcacionesInfo[horaReg] = {dia: 1, min: minMarcacion};
+        }
+        // Buscar salida en dia siguiente cerca de minFin
+        else if (siguienteTexto === fechaRegTexto && minMarcacion <= (minFin + 240)) {
+          marcaciones.push(horaReg);
+          marcacionesInfo[horaReg] = {dia: 2, min: minMarcacion};
+        }
+      }
+    }
+
+    // Para turnos cruzados, ordenar: primero las del dia del turno, luego las del dia siguiente
+    let marcacionesOrdenadas = marcaciones.slice();
+    if (turnoCruzado && marcacionesInfo) {
+      marcacionesOrdenadas.sort(function(a, b) {
+        const infoA = marcacionesInfo[a] || {dia: 0, min: 0};
+        const infoB = marcacionesInfo[b] || {dia: 0, min: 0};
+        if (infoA.dia !== infoB.dia) return infoA.dia - infoB.dia;
+        return infoA.min - infoB.min;
+      });
+    } else if (esMadrugada && marcacionesInfo) {
+      // Turno madrugada: primero las del dia anterior, luego las del dia del turno
+      marcacionesOrdenadas.sort(function(a, b) {
+        const infoA = marcacionesInfo[a] || {dia: 0, min: 0};
+        const infoB = marcacionesInfo[b] || {dia: 0, min: 0};
+        if (infoA.dia !== infoB.dia) return infoA.dia - infoB.dia;
+        return infoA.min - infoB.min;
+      });
+    }
+    const entrada     = marcacionesOrdenadas.length > 0 ? marcacionesOrdenadas[0] : "";
+    const salida      = marcacionesOrdenadas.length > 1 ? marcacionesOrdenadas[marcacionesOrdenadas.length-1] : "";
+    // Determinar estado final
+    let estadoFinal;
+    if (marcaciones.length > 0) {
+      // Verificar tardanza: entrada mas de 15 min despues del inicio
+      const minEntrada = convertirMinutos(marcaciones[0]);
+      const margenTardanza = 15;
+      // Si turno madrugada y entrada es del dia anterior (>=22:30 = 1350 min), no es tardanza
+      const entradaEsDiaAnterior = esMadrugada && minEntrada >= 1350;
+      if (entradaEsDiaAnterior) {
+        estadoFinal = "A"; // Asistencia normal (entrada anticipada del dia anterior)
+      } else if (minEntrada > minInicio + margenTardanza && minInicio > 0) {
+        estadoFinal = "T"; // Tardanza
+      } else {
+        estadoFinal = "A"; // Asistencia
+      }
+    } else {
+      estadoFinal = estado === "REVISION" ? "REVISION" : "F";
+    }
+
+    hojaFinal.getRange(filaFinal,1).setValue(fecha);
+    hojaFinal.getRange(filaFinal,2).setValue(nombre);
+    hojaFinal.getRange(filaFinal,3).setValue(lugar);
+    hojaFinal.getRange(filaFinal,4).setValue(horaInicio);
+    hojaFinal.getRange(filaFinal,5).setValue(horaFin);
+    hojaFinal.getRange(filaFinal,6).setValue(entrada);
+    hojaFinal.getRange(filaFinal,7).setValue(salida);
+    hojaFinal.getRange(filaFinal,8).setValue(estadoFinal);
+    filaFinal++;
+  }
+  // Ordenar por nombre (col B) luego fecha (col A)
+  if (filaFinal > 3) {
+    hojaFinal.getRange(2, 1, filaFinal - 2, 8).sort([{column: 2, ascending: true}, {column: 1, ascending: true}]);
+  }
 }
 
-function eliminarProg(fila) {
-  if (!confirm('Eliminar este registro?')) return;
-  fetchJSON(SCRIPT_URL + '?accion=eliminarProgramacion&fila=' + fila).then(function(data) {
-    if (data.status === 'ok') cargarTablaEditProg();
-    else alert('Error: ' + data.message);
-  }).catch(function(e){ alert('Error: ' + e.message); });
+function unificarMarcaciones() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const hojaFoto = ss.getSheetByName("REGISTROS");
+  const hojaBio = ss.getSheetByName("BIOMETRICO");
+  const hojaFinal = ss.getSheetByName("MARCACIONES_UNIFICADAS");
+  const hojaPersonal = ss.getSheetByName("PERSONAL");
+  hojaFinal.getRange(2,1,10000,4).clearContent();
+  let fila = 2;
+
+  // Mapa nombre_completo -> nombre_sistema Y dni -> nombre_sistema
+  const mapaPersonal = {};
+  const mapaDni = {};
+  if (hojaPersonal && hojaPersonal.getLastRow() > 1) {
+    const datPer = hojaPersonal.getRange(2,1,hojaPersonal.getLastRow()-1,3).getValues();
+    datPer.forEach(function(r) {
+      if (r[0]) {
+        mapaPersonal[String(r[0]).trim().toLowerCase()] = String(r[0]).trim();
+        if (r[1]) mapaPersonal[String(r[1]).trim().toLowerCase()] = String(r[0]).trim();
+        if (r[2]) mapaDni[String(r[2]).trim()] = String(r[0]).trim();
+      }
+    });
+  }
+
+  function getNombreSistema(nombre) {
+    const key = String(nombre).trim().toLowerCase();
+    return mapaPersonal[key] || String(nombre).trim();
+  }
+
+  function getNombreSistemaPorDni(dni, nombreFallback) {
+    const dniStr = String(dni).trim();
+    return mapaDni[dniStr] || getNombreSistema(nombreFallback);
+  }
+
+  // FOTO - usar DNI para cruce
+  const datosFoto = hojaFoto.getDataRange().getValues();
+  for (let i = 1; i < datosFoto.length; i++) {
+    const dniFoto = datosFoto[i][1];
+    const nombreCompleto = datosFoto[i][2];
+    let fecha = datosFoto[i][5];
+    let hora = datosFoto[i][6];
+    if (!nombreCompleto || !fecha || !hora) continue;
+    // Convertir Date a texto si es necesario
+    if (fecha instanceof Date) {
+      const dd = String(fecha.getDate()).padStart(2,"0");
+      const mm = String(fecha.getMonth()+1).padStart(2,"0");
+      fecha = dd + "/" + mm + "/" + fecha.getFullYear();
+    }
+    if (hora instanceof Date) {
+      hora = String(hora.getHours()).padStart(2,"0") + ":" + String(hora.getMinutes()).padStart(2,"0");
+    }
+    hojaFinal.getRange(fila,1).setValue(fecha);
+    hojaFinal.getRange(fila,2).setValue(getNombreSistemaPorDni(dniFoto, nombreCompleto));
+    hojaFinal.getRange(fila,3).setValue(hora);
+    hojaFinal.getRange(fila,4).setValue("FOTO");
+    fila++;
+  }
+
+  // BIOMETRICO - usar DNI para cruce
+  const datosBio = hojaBio.getDataRange().getValues();
+  for (let i = 1; i < datosBio.length; i++) {
+    const dni = String(datosBio[i][0]).trim();
+    const nombre = datosBio[i][1];
+    const fecha = datosBio[i][2];
+    const hora = datosBio[i][3];
+    if (!nombre || !fecha || !hora) continue;
+    // Buscar nombre_sistema por DNI primero, luego por nombre
+    const nombreSistema = getNombreSistemaPorDni(dni, nombre);
+    hojaFinal.getRange(fila,1).setValue(fecha);
+    hojaFinal.getRange(fila,2).setValue(nombreSistema);
+    hojaFinal.getRange(fila,3).setValue(hora);
+    hojaFinal.getRange(fila,4).setValue("BIOMETRICO");
+    fila++;
+  }
 }
 
-function agregarProgNuevo() {
-  var nombre = document.getElementById('ep-nombre').value;
-  var fecha = document.getElementById('ep-fecha').value;
-  var lugar = document.getElementById('ep-lugar').value;
-  var ini = document.getElementById('ep-inicio').value;
-  var fin = document.getElementById('ep-fin').value;
-  var est = document.getElementById('ep-estado').value;
-  if (!nombre || !fecha) { alert('Nombre y fecha son obligatorios'); return; }
-  var fechaFmt = fecha.split('-').reverse().join('/');
-  fetchJSON(SCRIPT_URL + '?accion=agregarProgramacion&nombre=' + encodeURIComponent(nombre) +
-    '&fecha=' + encodeURIComponent(fechaFmt) + '&lugar=' + encodeURIComponent(lugar) +
-    '&hora_inicio=' + encodeURIComponent(ini) + '&hora_fin=' + encodeURIComponent(fin) +
-    '&estado=' + encodeURIComponent(est)).then(function(data) {
-    if (data.status === 'ok') { alert('  Agregado'); cargarTablaEditProg(); }
-    else alert('Error: ' + data.message);
-  }).catch(function(e){ alert('Error: ' + e.message); });
+// ── GENERAR EXCEL CON DATOS REALES ──
+function obtenerDatosReporteDetalle(mes, anio) {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const hojaAF = ss.getSheetByName("ASISTENCIA_FINAL");
+  const hojaPersonal = ss.getSheetByName("PERSONAL");
+
+  const mapaPersonal = {};
+  if (hojaPersonal && hojaPersonal.getLastRow() > 1) {
+    const datPer = hojaPersonal.getRange(2,1,hojaPersonal.getLastRow()-1,5).getValues();
+    datPer.forEach(function(r) {
+      if (r[0]) mapaPersonal[normalizar(r[0])] = {
+        nombre_completo: String(r[1]).trim() || String(r[0]).trim(),
+        dni: String(r[2]).trim(),
+        cargo: String(r[3]).trim()
+      };
+    });
+  }
+
+  // Leer ASISTENCIA_FINAL con todos los campos
+  const trabajadores = {};
+  if (hojaAF && hojaAF.getLastRow() > 1) {
+    const datos = hojaAF.getDataRange().getValues();
+    for (let i = 1; i < datos.length; i++) {
+      const fecha = new Date(datos[i][0]);
+      if (fecha.getMonth() + 1 !== mes || fecha.getFullYear() !== anio) continue;
+      const nombre = datos[i][1];
+      const dia = fecha.getDate();
+      if (!trabajadores[nombre]) trabajadores[nombre] = {};
+      trabajadores[nombre][dia] = {
+        estado: datos[i][7] || "",
+        lugar: datos[i][2] || "",
+        h_inicio: datos[i][3] ? formatHora(datos[i][3]) : "",
+        h_fin: datos[i][4] ? formatHora(datos[i][4]) : "",
+        entrada: datos[i][5] ? formatHora(datos[i][5]) : "",
+        salida: datos[i][6] ? formatHora(datos[i][6]) : ""
+      };
+    }
+  }
+
+  const resultado = [];
+  let item = 1;
+  const listaTrabajadores = Object.keys(trabajadores).map(function(nombre) {
+    const per = mapaPersonal[normalizar(nombre)] || {};
+    return {
+      nombre_completo: per.nombre_completo || nombre,
+      dni: per.dni || "",
+      cargo: per.cargo || "",
+      dias: trabajadores[nombre]
+    };
+  });
+
+  listaTrabajadores.sort(function(a, b) {
+    return a.nombre_completo.toUpperCase().localeCompare(b.nombre_completo.toUpperCase(), 'es', {sensitivity: 'base'});
+  });
+
+  listaTrabajadores.forEach(function(t) {
+    resultado.push({
+      item: item++,
+      nombre_completo: t.nombre_completo,
+      dni: t.dni,
+      cargo: t.cargo,
+      dias: t.dias
+    });
+  });
+
+  return resultado;
 }
-</script>
-</body>
-</html>
+
+function getColorEstado(est) {
+  const colores = {
+    "A":    "#C6EFCE",  // Verde - Asistencia
+    "T":    "#FFEB9C",  // Amarillo - Tardanza
+    "F":    "#FFC7CE",  // Rojo - Falta
+    "DS":   "#D9D9D9",  // Gris - Descanso
+    "CP":   "#FFE6CC",  // Naranja claro - Compensacion
+    "CPSS": "#FFE6CC",  // Naranja claro
+    "FE":   "#E1D5E7",  // Morado claro - Feriado
+    "FR":   "#E1D5E7",  // Morado claro - Feriado regional
+    "C":    "#D5E8D4",  // Verde claro - Capacitacion
+    "CO":   "#FFF2CC",  // Amarillo claro - Comision
+    "DM":   "#DAE8FC",  // Azul claro - Descanso medico
+    "LM":   "#DAE8FC",  // Azul claro - Licencia maternidad
+    "LP":   "#DAE8FC",  // Azul claro - Licencia paternidad
+    "LO":   "#DAE8FC",  // Azul claro - Licencia onomastico
+    "LUB":  "#DAE8FC",  // Azul claro - Licencia bicicleta
+    "LS":   "#DAE8FC",  // Azul claro - Licencia sin goce
+    "V":    "#DAE8FC",  // Azul claro - Vacaciones
+    "REVISION": "#FCE4D6" // Naranja - Revision
+  };
+  return colores[est] || null;
+}
+
+function obtenerDatosReporte(mes, anio) {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const hojaAF = ss.getSheetByName("ASISTENCIA_FINAL");
+  const hojaPersonal = ss.getSheetByName("PERSONAL");
+
+  // Mapa nombre_sistema -> datos completos
+  const mapaPersonal = {};
+  if (hojaPersonal && hojaPersonal.getLastRow() > 1) {
+    const datPer = hojaPersonal.getRange(2,1,hojaPersonal.getLastRow()-1,5).getValues();
+    datPer.forEach(function(r) {
+      if (r[0]) mapaPersonal[normalizar(r[0])] = {
+        nombre_sistema: String(r[0]).trim(),
+        nombre_completo: String(r[1]).trim() || String(r[0]).trim(),
+        dni: String(r[2]).trim(),
+        cargo: String(r[3]).trim()
+      };
+    });
+  }
+
+  // Leer asistencia filtrada por mes
+  const trabajadores = {};
+  if (hojaAF && hojaAF.getLastRow() > 1) {
+    const datos = hojaAF.getDataRange().getValues();
+    for (let i = 1; i < datos.length; i++) {
+      const fecha = new Date(datos[i][0]);
+      if (fecha.getMonth() + 1 !== mes || fecha.getFullYear() !== anio) continue;
+      const nombre = datos[i][1];
+      const estado = datos[i][7];
+      const dia = fecha.getDate();
+      if (!trabajadores[nombre]) trabajadores[nombre] = {};
+      trabajadores[nombre][dia] = estado || "";
+    }
+  }
+
+  // Combinar con datos de personal
+  const resultado = [];
+  let item = 1;
+  // Ordenar por nombre completo
+  const listaTrabajadores = Object.keys(trabajadores).map(function(nombre) {
+    const per = mapaPersonal[normalizar(nombre)] || {};
+    return {
+      nombre_completo: per.nombre_completo || nombre,
+      dni: per.dni || "",
+      cargo: per.cargo || "",
+      dias: trabajadores[nombre]
+    };
+  });
+
+  listaTrabajadores.sort(function(a, b) {
+    return a.nombre_completo.toUpperCase().localeCompare(b.nombre_completo.toUpperCase(), 'es', {sensitivity: 'base'});
+  });
+
+  listaTrabajadores.forEach(function(t) {
+    resultado.push({
+      item: item++,
+      nombre_completo: t.nombre_completo,
+      dni: t.dni,
+      cargo: t.cargo,
+      dias: t.dias
+    });
+  });
+
+  return resultado;
+}
+
+function generarExcelMensual(mes, anio) {
+  const meses = ["","ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
+  const mesNom = meses[mes] || String(mes);
+  const trabajadores = obtenerDatosReporte(mes, anio);
+  const diasMes = new Date(anio, mes, 0).getDate();
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const nombreHoja = "RPT_MENSUAL_TEMP";
+
+  // Eliminar hoja temporal si existe
+  const hojaExist = ss.getSheetByName(nombreHoja);
+  if (hojaExist) ss.deleteSheet(hojaExist);
+  const ws = ss.insertSheet(nombreHoja);
+
+  // Semanas
+  const semanas = [];
+  let d = 1;
+  while (d <= diasMes) { semanas.push([d, Math.min(d+6, diasMes)]); d = Math.min(d+6,diasMes)+1; }
+
+  const semColors = ["#1F4E79","#2E75B6","#1F4E79","#2E75B6","#1F4E79"];
+
+  // Fila 1 - Titulo
+  const totalCols = 4 + diasMes + 3;
+  ws.getRange(1,1,1,totalCols).merge().setValue("CONTROL DE ASISTENCIA - SUTRAN UDLL - " + mesNom + " " + anio)
+    .setBackground("#1F3864").setFontColor("#FFFFFF").setFontWeight("bold").setFontSize(10)
+    .setHorizontalAlignment("center").setVerticalAlignment("middle");
+  ws.setRowHeight(1, 22);
+
+  // Fila 2 - Semanas
+  ws.getRange(2,1,1,4).setBackground("#1F3864");
+  semanas.forEach(function(sem, si) {
+    const c1 = 5 + sem[0] - 1;
+    const c2 = 5 + sem[1] - 1;
+    const label = "SEMANA " + (si+1);
+    if (c1 < c2) ws.getRange(2,c1,1,c2-c1+1).merge();
+    ws.getRange(2,c1).setValue(label).setBackground(semColors[si])
+      .setFontColor("#FFFFFF").setFontWeight("bold").setFontSize(7)
+      .setHorizontalAlignment("center");
+  });
+  ws.getRange(2,4+diasMes+1,1,3).setBackground("#1F3864");
+  ws.setRowHeight(2, 14);
+
+  // Fila 3 - Encabezados
+  const hdrs = ["N","DNI","APELLIDOS Y NOMBRES","CARGO"];
+  hdrs.forEach(function(h,i){ ws.getRange(3,i+1).setValue(h).setBackground("#2E75B6").setFontColor("#FFFFFF").setFontWeight("bold").setFontSize(7).setHorizontalAlignment("center"); });
+  for (let dd=1; dd<=diasMes; dd++) {
+    const si = Math.floor((dd-1)/7);
+    ws.getRange(3,4+dd).setValue(dd).setBackground(semColors[si]).setFontColor("#FFFFFF").setFontWeight("bold").setFontSize(6).setHorizontalAlignment("center");
+  }
+  ["T.A","T.F","T.DS"].forEach(function(h,i){ ws.getRange(3,4+diasMes+1+i).setValue(h).setBackground("#2E75B6").setFontColor("#FFFFFF").setFontWeight("bold").setFontSize(7).setHorizontalAlignment("center"); });
+  ws.setRowHeight(3, 28);
+
+  // Datos
+  trabajadores.forEach(function(t, ti) {
+    const r = ti + 4;
+    ws.setRowHeight(r, 14);
+    ws.getRange(r,1).setValue(t.item).setFontSize(7).setHorizontalAlignment("center");
+    ws.getRange(r,2).setValue(t.dni).setFontSize(7).setHorizontalAlignment("center");
+    ws.getRange(r,3).setValue(t.nombre_completo).setFontSize(7).setHorizontalAlignment("left");
+    ws.getRange(r,4).setValue(t.cargo).setFontSize(7).setHorizontalAlignment("center");
+    let tA=0,tF=0,tDS=0;
+    for (let dd=1; dd<=diasMes; dd++) {
+      const est = t.dias[dd] || "";
+      const cell = ws.getRange(r,4+dd);
+      cell.setValue(est).setFontSize(6).setHorizontalAlignment("center").setFontWeight("bold");
+      var colorEst = getColorEstado(est);
+      if (colorEst) cell.setBackground(colorEst);
+      if (est==="A") tA++;
+      else if (est==="F") tF++;
+      else if (est==="DS") tDS++;
+      if (est==="REVISION") cell.setFontSize(5);
+    }
+    ws.getRange(r,4+diasMes+1).setValue(tA).setBackground("#C6EFCE").setFontSize(7).setHorizontalAlignment("center").setFontWeight("bold");
+    ws.getRange(r,4+diasMes+2).setValue(tF).setBackground("#FFC7CE").setFontSize(7).setHorizontalAlignment("center").setFontWeight("bold");
+    ws.getRange(r,4+diasMes+3).setValue(tDS).setBackground("#D9D9D9").setFontSize(7).setHorizontalAlignment("center").setFontWeight("bold");
+  });
+
+  // Bordes
+  ws.getRange(1,1,trabajadores.length+3,totalCols).setBorder(true,true,true,true,true,true,"#AAAAAA",SpreadsheetApp.BorderStyle.SOLID);
+
+  // Anchos de columna
+  ws.setColumnWidth(1,35); ws.setColumnWidth(2,75); ws.setColumnWidth(3,220); ws.setColumnWidth(4,120);
+  for (let dd=1; dd<=diasMes; dd++) ws.setColumnWidth(4+dd, 24);
+  ws.setColumnWidth(4+diasMes+1,35); ws.setColumnWidth(4+diasMes+2,35); ws.setColumnWidth(4+diasMes+3,35);
+
+  // Leyenda
+  const lr = trabajadores.length + 5;
+  ws.getRange(lr,1,1,2).merge().setValue("LEYENDA").setBackground("#1F3864").setFontColor("#FFFFFF").setFontWeight("bold").setFontSize(7).setHorizontalAlignment("center");
+  const leyendas = [["A","Asistencia","#C6EFCE"],["F","Falta","#FFC7CE"],["DS","Descanso","#D9D9D9"],["CP","Compensacion","#FFEB9C"],["REV","Revision","#FCE4D6"]];
+  leyendas.forEach(function(ley,li) {
+    ws.getRange(lr+1+li,1).setValue(ley[0]).setBackground(ley[2]).setFontSize(7).setHorizontalAlignment("center").setFontWeight("bold");
+    ws.getRange(lr+1+li,2).setValue(ley[1]).setBackground(ley[2]).setFontSize(7).setHorizontalAlignment("left");
+    ws.setRowHeight(lr+1+li, 13);
+  });
+
+  // Configuracion de pagina
+  const pageSetup = ws.getSheetValues;
+  SpreadsheetApp.flush();
+
+  // Exportar como xlsx
+  const ssId = ss.getId();
+  const sheetId = ws.getSheetId();
+  const url = "https://docs.google.com/spreadsheets/d/" + ssId + "/export?format=xlsx&gid=" + sheetId + "&portrait=false&fitw=true";
+  return url;
+}
+
+function generarExcelFirmas(mes, anio) {
+  const meses = ["","ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
+  const mesNom = meses[mes] || String(mes);
+  const trabajadores = obtenerDatosReporte(mes, anio);
+  const diasMes = new Date(anio, mes, 0).getDate();
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const nombreHoja = "RPT_FIRMAS_TEMP";
+
+  // Leer leyenda
+  const hojaLey = ss.getSheetByName("LEYENDA");
+  const leyendaData = [];
+  if (hojaLey && hojaLey.getLastRow() > 1) {
+    const datLey = hojaLey.getRange(2,1,hojaLey.getLastRow()-1,2).getValues();
+    datLey.forEach(function(r) {
+      if (r[0] && r[1]) leyendaData.push({desc: String(r[0]).trim(), cod: String(r[1]).trim()});
+    });
+  }
+
+  const hojaExist = ss.getSheetByName(nombreHoja);
+  if (hojaExist) ss.deleteSheet(hojaExist);
+  const ws = ss.insertSheet(nombreHoja);
+
+  const semanas = [];
+  let d = 1;
+  while (d <= diasMes) { semanas.push([d, Math.min(d+6, diasMes)]); d = Math.min(d+6,diasMes)+1; }
+  const semColors = ["#1F4E79","#2E75B6","#1F4E79","#2E75B6","#1F4E79"];
+
+  const COL_N      = 1;
+  const COL_NOMBRE = 2;
+  const COL_DIA1   = 3;
+  const COL_TFALTAS = COL_DIA1 + diasMes;
+  const COL_TTARD   = COL_TFALTAS + 1;
+  const COL_TASIST  = COL_TTARD + 1;
+  const COL_TDIAS   = COL_TASIST + 1;
+  const COL_FIRMA   = COL_TDIAS + 1;
+  const totalCols   = COL_FIRMA;
+
+  // Fila 1
+  ws.getRange(1,1,1,totalCols).merge()
+    .setValue("CONTROL DE ASISTENCIA DEL PERSONAL SUTRAN REGION LA LIBERTAD - " + mesNom + " " + anio)
+    .setBackground("#1F3864").setFontColor("#FFFFFF").setFontWeight("bold").setFontSize(9)
+    .setHorizontalAlignment("center").setVerticalAlignment("middle");
+  ws.setRowHeight(1, 22);
+
+  // Fila 2
+  ws.getRange(2,1,1,totalCols).merge()
+    .setValue("GERENCIA DE ARTICULACION TERRITORIAL")
+    .setBackground("#2E75B6").setFontColor("#FFFFFF").setFontWeight("bold").setFontSize(7)
+    .setHorizontalAlignment("center");
+  ws.setRowHeight(2, 14);
+
+  // Fila 3 - Semanas
+  ws.getRange(3,COL_N).setBackground("#1F3864");
+  ws.getRange(3,COL_NOMBRE).setBackground("#1F3864");
+  semanas.forEach(function(sem, si) {
+    const c1 = COL_DIA1 + sem[0] - 1;
+    const c2 = COL_DIA1 + sem[1] - 1;
+    if (c1 < c2) ws.getRange(3,c1,1,c2-c1+1).merge();
+    ws.getRange(3,c1).setValue("SEMANA "+(si+1))
+      .setBackground(semColors[si]).setFontColor("#FFFFFF")
+      .setFontWeight("bold").setFontSize(6).setHorizontalAlignment("center");
+  });
+  ws.getRange(3,COL_TFALTAS,1,5).setBackground("#1F3864");
+  ws.setRowHeight(3, 12);
+
+  // Fila 4 - Encabezados
+  ws.getRange(4,COL_N).setValue("N").setBackground("#2E75B6").setFontColor("#FFFFFF").setFontWeight("bold").setFontSize(7).setHorizontalAlignment("center");
+  ws.getRange(4,COL_NOMBRE).setValue("APELLIDOS Y NOMBRES").setBackground("#2E75B6").setFontColor("#FFFFFF").setFontWeight("bold").setFontSize(7).setHorizontalAlignment("center");
+  for (let dd=1; dd<=diasMes; dd++) {
+    const si = Math.floor((dd-1)/7);
+    ws.getRange(4,COL_DIA1+dd-1).setValue(dd).setBackground(semColors[si]).setFontColor("#FFFFFF").setFontWeight("bold").setFontSize(6).setHorizontalAlignment("center");
+  }
+  ws.getRange(4,COL_TFALTAS).setValue("T.FALTAS").setBackground("#C0504D").setFontColor("#FFFFFF").setFontWeight("bold").setFontSize(6).setHorizontalAlignment("center");
+  ws.getRange(4,COL_TTARD).setValue("T.TARD").setBackground("#E36C09").setFontColor("#FFFFFF").setFontWeight("bold").setFontSize(6).setHorizontalAlignment("center");
+  ws.getRange(4,COL_TASIST).setValue("T.ASIST").setBackground("#4F81BD").setFontColor("#FFFFFF").setFontWeight("bold").setFontSize(6).setHorizontalAlignment("center");
+  ws.getRange(4,COL_TDIAS).setValue("T.DIAS").setBackground("#2E75B6").setFontColor("#FFFFFF").setFontWeight("bold").setFontSize(6).setHorizontalAlignment("center");
+  ws.getRange(4,COL_FIRMA).setValue("FIRMA").setBackground("#2E75B6").setFontColor("#FFFFFF").setFontWeight("bold").setFontSize(7).setHorizontalAlignment("center");
+  ws.setRowHeight(4, 22);
+
+  // Datos
+  trabajadores.forEach(function(t, ti) {
+    const r = ti + 5;
+    ws.setRowHeight(r, 16);
+    ws.getRange(r,COL_N).setValue(t.item).setFontSize(8).setHorizontalAlignment("center");
+    ws.getRange(r,COL_NOMBRE).setValue(t.nombre_completo).setFontSize(8).setHorizontalAlignment("left");
+    let tF=0, tT=0, tA=0, tDias=0;
+    for (let dd=1; dd<=diasMes; dd++) {
+      const est = t.dias[dd] || "";
+      const cell = ws.getRange(r, COL_DIA1+dd-1);
+      cell.setValue(est).setFontSize(6).setHorizontalAlignment("center").setFontWeight("bold");
+      if (est==="A")       { cell.setBackground("#C6EFCE"); tA++; tDias++; }
+      else if (est==="F")  { cell.setBackground("#FFC7CE"); tF++; }
+      else if (est==="T")  { cell.setBackground("#FFEB9C"); tT++; }
+      else if (est==="DS") { cell.setBackground("#D9D9D9"); }
+      else if (est==="CP"||est==="CPSS") { cell.setBackground("#FFEB9C"); }
+      else if (est==="FE"||est==="FR")   { cell.setBackground("#E1D5E7"); }
+      else if (est==="C")  { cell.setBackground("#D5E8D4"); }
+      else if (est==="CO") { cell.setBackground("#FFF2CC"); }
+      else if (est==="DM"||est==="LM"||est==="LP"||est==="LO"||est==="LUB"||est==="LS"||est==="V") { cell.setBackground("#DAE8FC"); }
+      else if (est==="REVISION") { cell.setBackground("#FCE4D6").setFontSize(5); }
+    }
+    ws.getRange(r,COL_TFALTAS).setValue(tF).setFontSize(7).setFontWeight("bold").setHorizontalAlignment("center").setBackground("#FFC7CE");
+    ws.getRange(r,COL_TTARD).setValue(tT).setFontSize(7).setFontWeight("bold").setHorizontalAlignment("center").setBackground("#FFEB9C");
+    ws.getRange(r,COL_TASIST).setValue(tA).setFontSize(7).setFontWeight("bold").setHorizontalAlignment("center").setBackground("#C6EFCE");
+    ws.getRange(r,COL_TDIAS).setValue(tDias).setFontSize(7).setFontWeight("bold").setHorizontalAlignment("center");
+    ws.getRange(r,COL_FIRMA).setValue("");
+  });
+
+  // Bordes
+  ws.getRange(1,1,trabajadores.length+4,totalCols).setBorder(true,true,true,true,true,true,"#AAAAAA",SpreadsheetApp.BorderStyle.SOLID);
+
+  // Leyenda
+  const lr = trabajadores.length + 6;
+  ws.getRange(lr,1,1,2).merge().setValue("LEYENDA")
+    .setBackground("#1F3864").setFontColor("#FFFFFF").setFontWeight("bold").setFontSize(7).setHorizontalAlignment("center");
+  ws.setRowHeight(lr, 14);
+  const leyFinal = leyendaData.length > 0 ? leyendaData :
+    [{cod:"A",desc:"Asistencia"},{cod:"F",desc:"Falta"},{cod:"DS",desc:"Descanso"},{cod:"T",desc:"Tardanza"},
+     {cod:"C",desc:"Capacitacion"},{cod:"FE",desc:"Feriado"},{cod:"FR",desc:"Feriado Regional"},{cod:"CO",desc:"Comision"}];
+  leyFinal.forEach(function(ley,li) {
+    const r = lr+1+li;
+    ws.setRowHeight(r, 11);
+    ws.getRange(r,1).setValue(ley.cod).setFontSize(6).setHorizontalAlignment("center").setFontWeight("bold").setBorder(true,true,true,true,false,false);
+    ws.getRange(r,2,1,3).merge().setValue(ley.desc).setFontSize(6).setBorder(true,true,true,true,false,false);
+  });
+
+  // Anchos normales - la pagina se ajusta automaticamente
+  ws.setColumnWidth(COL_N, 25);
+  ws.setColumnWidth(COL_NOMBRE, 200);
+  for (let dd=1; dd<=diasMes; dd++) ws.setColumnWidth(COL_DIA1+dd-1, 18);
+  ws.setColumnWidth(COL_TFALTAS, 40); ws.setColumnWidth(COL_TTARD, 40);
+  ws.setColumnWidth(COL_TASIST, 40); ws.setColumnWidth(COL_TDIAS, 40);
+  ws.setColumnWidth(COL_FIRMA, 80);
+
+  ws.setFrozenRows(4);
+
+  // Configurar pagina de impresion A4 horizontal
+  // Apps Script guarda esta config en el xlsx al exportar
+  ws.setHiddenGridlines(false);
+
+  // Establecer area de impresion
+  const lastDataRow = trabajadores.length + 4;
+  const lastLeyRow = lastDataRow + 2 + leyFinal.length;
+
+  // Configurar via Spreadsheet API si esta disponible
+  try {
+    const ssResource = {
+      requests: [{
+        updateSheetProperties: {
+          properties: {
+            sheetId: ws.getSheetId(),
+            tabColor: {red:0.12,green:0.24,blue:0.39}
+          },
+          fields: "tabColor"
+        }
+      }]
+    };
+    Sheets.Spreadsheets.batchUpdate(ssResource, ss.getId());
+  } catch(e) {}
+
+  SpreadsheetApp.flush();
+  const ssId = ss.getId();
+  const sheetId = ws.getSheetId();
+
+  // Exportar con configuracion de pagina horizontal A4
+  return "https://docs.google.com/spreadsheets/d/" + ssId +
+    "/export?format=xlsx&gid=" + sheetId +
+    "&portrait=false&fitw=true&size=A4" +
+    "&top_margin=0.3&bottom_margin=0.3&left_margin=0.3&right_margin=0.3";
+}
+
+function normalizar(str) {
+  return String(str).trim().toLowerCase()
+    .replace(/[áàä]/g, 'a')
+    .replace(/[éèë]/g, 'e')
+    .replace(/[íìï]/g, 'i')
+    .replace(/[óòö]/g, 'o')
+    .replace(/[úùü]/g, 'u')
+    .replace(/ñ/g, 'n');
+}
+
+function generarReporteMensual(mesFiltro, anioFiltro) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  mesFiltro = mesFiltro || new Date().getMonth() + 1;
+  anioFiltro = anioFiltro || new Date().getFullYear();
+  const hojaAsistencia = ss.getSheetByName("ASISTENCIA_FINAL");
+  const hojaReporte = ss.getSheetByName("REPORTE_MENSUAL");
+  const hojaPersonal = ss.getSheetByName("PERSONAL");
+
+  // Mapa nombre_sistema -> nombre_completo
+  const mapaPersonal = {};
+  if (hojaPersonal && hojaPersonal.getLastRow() > 1) {
+    const datPer = hojaPersonal.getRange(2,1,hojaPersonal.getLastRow()-1,2).getValues();
+    datPer.forEach(function(r) {
+      if (r[0]) {
+        mapaPersonal[normalizar(r[0])] = String(r[1]).trim() || String(r[0]).trim();
+        mapaPersonal[normalizar(r[1])] = String(r[1]).trim() || String(r[0]).trim();
+      }
+    });
+  }
+
+  hojaReporte.clear();
+  hojaReporte.getRange(1,1).setValue("NOMBRE");
+  for (let d = 1; d <= 31; d++) hojaReporte.getRange(1,d+1).setValue(d);
+  const datos = hojaAsistencia.getDataRange().getValues();
+  let trabajadores = {};
+  for (let i = 1; i < datos.length; i++) {
+    const fecha = new Date(datos[i][0]);
+    if (fecha.getMonth() + 1 !== mesFiltro || fecha.getFullYear() !== anioFiltro) continue;
+    const nombre = datos[i][1];
+    const estado = datos[i][7];
+    const dia = fecha.getDate();
+    if (!trabajadores[nombre]) trabajadores[nombre] = {};
+    trabajadores[nombre][dia] = estado;
+  }
+  let fila = 2;
+  for (let nombre in trabajadores) {
+    // Usar nombre completo si existe
+    const nombreCompleto = mapaPersonal[normalizar(nombre)] || nombre;
+    hojaReporte.getRange(fila,1).setValue(nombreCompleto);
+    for (let d = 1; d <= 31; d++) {
+      const estado = trabajadores[nombre][d] || "";
+      const celda = hojaReporte.getRange(fila,d+1);
+      celda.setValue(estado);
+      if (estado=="F") celda.setBackground("#f4cccc");
+      else if (estado=="DS") celda.setBackground("#d9d9d9");
+      else if (estado=="CP") celda.setBackground("#fff2cc");
+      else if (estado=="REVISION") celda.setBackground("#fce5cd");
+      else celda.setBackground("#ffffff");
+    }
+    let totalF=0, totalT=0, totalA=0, totalDias=0;
+    for (let d = 1; d <= 31; d++) {
+      const estado = trabajadores[nombre][d] || "";
+      if (estado=="F") totalF++;
+      if (estado=="T") totalT++;
+      if (estado=="A") { totalA++; totalDias++; }
+    }
+    hojaReporte.getRange(1,33).setValue("TOTAL F");
+    hojaReporte.getRange(1,34).setValue("TOTAL T");
+    hojaReporte.getRange(1,35).setValue("TOTAL A");
+    hojaReporte.getRange(1,36).setValue("TOTAL DIAS");
+    hojaReporte.getRange(fila,33).setValue(totalF);
+    hojaReporte.getRange(fila,34).setValue(totalT);
+    hojaReporte.getRange(fila,35).setValue(totalA);
+    hojaReporte.getRange(fila,36).setValue(totalDias);
+    fila++;
+  }
+}
+
+function generarReporteImprimir(mesFiltro, anioFiltro) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const hojaMensual = ss.getSheetByName("REPORTE_MENSUAL");
+  const hojaPersonal = ss.getSheetByName("PERSONAL");
+  const hojaImprimir = ss.getSheetByName("REPORTE_IMPRIMIR");
+  hojaImprimir.clear();
+  const datosMensual = hojaMensual.getDataRange().getValues();
+  const datosPersonal = hojaPersonal.getDataRange().getValues();
+  let personal = {};
+  for (let i = 1; i < datosPersonal.length; i++) {
+    const nombreSistema = datosPersonal[i][0];
+    personal[normalizar(nombreSistema)] = {
+      nombreCompleto: datosPersonal[i][1],
+      dni: datosPersonal[i][2],
+      cargo: datosPersonal[i][3]
+    };
+  }
+  hojaImprimir.getRange(1,1).setValue("DNI");
+  hojaImprimir.getRange(1,2).setValue("NOMBRE");
+  hojaImprimir.getRange(1,3).setValue("CARGO");
+  for (let d = 1; d <= 31; d++) hojaImprimir.getRange(1,d+3).setValue(d);
+  hojaImprimir.getRange(1,35).setValue("DIAS TRABAJADOS");
+  hojaImprimir.getRange(1,36).setValue("FIRMA");
+  let fila = 2;
+  for (let i = 1; i < datosMensual.length; i++) {
+    const nombre = datosMensual[i][0];
+    if (!nombre) continue;
+    const clave = normalizar(nombre);
+    const nombreCompleto = personal[clave]?.nombreCompleto || nombre;
+    const dni = personal[clave]?.dni || "";
+    const cargo = personal[clave]?.cargo || "";
+    hojaImprimir.getRange(fila,1).setValue(dni);
+    hojaImprimir.getRange(fila,2).setValue(nombreCompleto);
+    hojaImprimir.getRange(fila,3).setValue(cargo);
+    let totalTrabajados = 0;
+    for (let d = 1; d <= 31; d++) {
+      const estado = datosMensual[i][d] || "";
+      const celda = hojaImprimir.getRange(fila,d+3);
+      celda.setValue(estado);
+      if (estado=="F") celda.setBackground("#f4cccc");
+      else if (estado=="DS") celda.setBackground("#d9d9d9");
+      else if (estado=="CP") celda.setBackground("#fff2cc");
+      else if (estado=="REVISION") celda.setBackground("#fce5cd");
+      else celda.setBackground("#ffffff");
+      if (estado=="A") totalTrabajados++;
+    }
+    hojaImprimir.getRange(fila,35).setValue(totalTrabajados);
+    hojaImprimir.getRange(fila,36).setValue("");
+    fila++;
+  }
+  const totalColumnas = 36;
+  const encabezado = hojaImprimir.getRange(1,1,1,totalColumnas);
+  encabezado.setFontWeight("bold").setBackground("#1f1f1f").setFontColor("#ffffff").setHorizontalAlignment("center");
+  hojaImprimir.getDataRange().setBorder(true,true,true,true,true,true);
+  hojaImprimir.getDataRange().setHorizontalAlignment("center").setVerticalAlignment("middle");
+  hojaImprimir.setColumnWidth(1,100);
+  hojaImprimir.setColumnWidth(2,220);
+  hojaImprimir.setColumnWidth(3,140);
+  for (let c = 4; c <= 34; c++) hojaImprimir.setColumnWidth(c,35);
+  hojaImprimir.setColumnWidth(35,100);
+  hojaImprimir.setColumnWidth(36,180);
+  hojaImprimir.setFrozenRows(1);
+  hojaImprimir.setFrozenColumns(3);
+}
+
+function consultarTrabajador() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const hojaConsulta = ss.getSheetByName("CONSULTA");
+  const hojaAsistencia = ss.getSheetByName("ASISTENCIA_FINAL");
+  const nombreBuscar = hojaConsulta.getRange("B3").getValue().toString().trim().toLowerCase();
+  const fechaBuscar = hojaConsulta.getRange("C3").getValue();
+  hojaConsulta.getRange(7,1,100,6).clearContent();
+  const datos = hojaAsistencia.getDataRange().getValues();
+  let fila = 7;
+  for (let i = 1; i < datos.length; i++) {
+    const fecha = datos[i][0];
+    const nombre = datos[i][1];
+    const lugar = datos[i][2];
+    const horaInicio = datos[i][3];
+    const horaFin = datos[i][4];
+    const entrada = datos[i][5];
+    const salida = datos[i][6];
+    const estado = datos[i][7];
+    const nombreData = nombre.toString().trim().toLowerCase();
+    const fecha1 = Utilities.formatDate(new Date(fecha), Session.getScriptTimeZone(), "dd/MM/yyyy");
+    const fecha2 = Utilities.formatDate(new Date(fechaBuscar), Session.getScriptTimeZone(), "dd/MM/yyyy");
+    if (nombreData == nombreBuscar && fecha1 == fecha2) {
+      hojaConsulta.getRange(fila,1).setValue(nombre);
+      hojaConsulta.getRange(fila,2).setValue(lugar);
+      const horaInicioTexto = Utilities.formatDate(new Date(horaInicio), Session.getScriptTimeZone(), "HH:mm");
+      const horaFinTexto = Utilities.formatDate(new Date(horaFin), Session.getScriptTimeZone(), "HH:mm");
+      hojaConsulta.getRange(fila,3).setValue(horaInicioTexto + " - " + horaFinTexto);
+      hojaConsulta.getRange(fila,4).setValue(entrada);
+      hojaConsulta.getRange(fila,5).setValue(salida);
+      hojaConsulta.getRange(fila,6).setValue(estado);
+      fila++;
+    }
+  }
+}
