@@ -264,10 +264,12 @@ tr:hover td{background:rgba(79,142,247,0.03)}
       <div class="btn-row no-print">
         <button class="btn btn-primary" onclick="cargarMensual()">Cargar reporte</button>
         <button class="btn" onclick="completarProgMes()" style="background:#0EA5E9;color:white" title="Completa el mes con horarios base configurados">+ Completar mes</button>
-        <button class="btn btn-green" onclick="descargarExcel('generarExcelMensual',this)">Descargar Excel</button>
-        <button class="btn btn-green" onclick="descargarExcel('generarExcelTardanzas',this)" style="background:var(--orange)">Tardanzas</button>
-        <button class="btn btn-green" onclick="descargarExcel('generarExcelDetalle',this)" style="background:var(--purple)">Detalle</button>
-        <button class="btn" onclick="window.print()">Imprimir</button>
+        <button class="btn btn-green" onclick="descargarExcel('generarExcelMensual',this)">⬇ Excel Mensual</button>
+        <button class="btn" onclick="imprimirReporte('generarExcelMensual',this)" style="background:var(--blue2);color:white;font-weight:500">🖨 Imprimir Mensual</button>
+        <button class="btn btn-green" onclick="descargarExcel('generarExcelTardanzas',this)" style="background:var(--orange)">⬇ Excel Tardanzas</button>
+        <button class="btn" onclick="imprimirReporte('generarExcelTardanzas',this)" style="background:var(--orange);color:white;font-weight:500">🖨 Imprimir Tardanzas</button>
+        <button class="btn btn-green" onclick="descargarExcel('generarExcelDetalle',this)" style="background:var(--purple)">⬇ Excel Detalle</button>
+        <button class="btn" onclick="imprimirReporte('generarExcelDetalle',this)" style="background:var(--purple);color:white;font-weight:500">🖨 Imprimir Detalle</button>
       </div>
       <div class="card" style="padding:12px">
         <div class="rep-wrap" id="mensual-contenido"><div class="loading-cell">Carga el reporte</div></div>
@@ -280,8 +282,8 @@ tr:hover td{background:rgba(79,142,247,0.03)}
       <div class="page-sub">Reporte final para impresion y firma</div>
       <div class="btn-row no-print">
         <button class="btn btn-primary" onclick="cargarImprimir()">Cargar reporte</button>
-        <button class="btn btn-green" id="btn-excel-firmas" onclick="descargarExcel('generarExcelFirmas',this)">Descargar Excel</button>
-        <button class="btn" onclick="window.print()">Imprimir</button>
+        <button class="btn btn-green" id="btn-excel-firmas" onclick="descargarExcel('generarExcelFirmas',this)">⬇ Descargar Excel</button>
+        <button class="btn btn-primary" onclick="imprimirReporte('generarExcelFirmas',this)">🖨 Imprimir</button>
       </div>
       <div class="card" style="padding:12px">
         <div class="rep-wrap" id="imprimir-contenido"><div class="loading-cell">Carga el reporte</div></div>
@@ -478,6 +480,7 @@ tr:hover td{background:rgba(79,142,247,0.03)}
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzW2KkDc8Rl3yUxA43Dji7fO-gqugqLsl4LdUvEs78sgIZ-DlZu_H342LEvrcsg2Rrh/exec";
 const EXCEL_URL = "https://sutran-excel.onrender.com/excel";
+const PRINT_URL = "https://sutran-excel.onrender.com/print";
 const MESES = ["","Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 let personalData = [];
 let progData = [];
@@ -1053,6 +1056,59 @@ function descargarExcel(accion, btn) {
     a.download = (prefijos[tipo] || 'Reporte_Asistencia_') + mesNom + '_' + anio + '.xlsx';
     a.click();
     URL.revokeObjectURL(url);
+    bt.disabled = false; bt.textContent = textoOrig;
+  }).catch(function(e) {
+    bt.disabled = false; bt.textContent = textoOrig;
+    alert('Error: ' + e.message);
+  });
+}
+  // IMPRIMIR REPORTE DIRECTO (sin descargar Excel)
+function imprimirReporte(accion, btn) {
+  var mes = document.getElementById('g-mes').value;
+  var anio = document.getElementById('g-anio').value;
+  var bt = event.currentTarget;
+  var textoOrig = bt.textContent;
+  bt.textContent = 'Preparando...';
+  bt.disabled = true;
+
+  var tipo = accion === 'generarExcelFirmas' ? 'firmas' :
+             accion === 'generarExcelTardanzas' ? 'tardanzas' :
+             accion === 'generarExcelDetalle' ? 'detalle' : 'mensual';
+  var meses = ["","ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
+  var mesNom = meses[parseInt(mes)];
+
+  var accionDatos = tipo === 'tardanzas' ? 'getDatosReporteTardanzas' :
+                    tipo === 'detalle' ? 'getDatosReporteDetalle' : 'getDatosReporte';
+
+  fetchJSON(SCRIPT_URL + '?accion=' + accionDatos + '&mes=' + mes + '&anio=' + anio).then(function(data) {
+    if (!data.trabajadores) {
+      bt.disabled = false; bt.textContent = textoOrig;
+      alert('Error al obtener datos'); return;
+    }
+    var payload = {
+      tipo: tipo,
+      trabajadores: data.trabajadores,
+      dias_mes: new Date(parseInt(anio), parseInt(mes), 0).getDate(),
+      mes_nom: mesNom,
+      anio: parseInt(anio),
+      leyenda: data.leyenda || []
+    };
+
+    // Submit form a /print en pestaña nueva (browser se encarga del POST + nueva tab)
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = PRINT_URL;
+    form.target = '_blank';
+    form.enctype = 'application/x-www-form-urlencoded';
+    var inp = document.createElement('input');
+    inp.type = 'hidden';
+    inp.name = 'data';
+    inp.value = JSON.stringify(payload);
+    form.appendChild(inp);
+    document.body.appendChild(form);
+    form.submit();
+    setTimeout(function(){ form.remove(); }, 100);
+
     bt.disabled = false; bt.textContent = textoOrig;
   }).catch(function(e) {
     bt.disabled = false; bt.textContent = textoOrig;
