@@ -1936,6 +1936,129 @@ function agregarProgNuevo() {
     else alert('Error: ' + data.message);
   }).catch(function(e){ alert('Error: ' + e.message); });
 }
+
+
+// BANCO DE HORAS
+function cargarBancoHoras() {
+  document.getElementById('bh-saldos-tabla').innerHTML = '<tr><td colspan="2" class="loading-cell">Cargando...</td></tr>';
+  document.getElementById('bh-historial-tabla').innerHTML = '<tr><td colspan="7" class="loading-cell">Cargando...</td></tr>';
+
+  // Poblar select trabajadores - siempre cargar fresh
+  fetchJSON(SCRIPT_URL + '?accion=listarPersonal').then(function(dataP) {
+    personalData = dataP.personal || [];
+    var sel = document.getElementById('bh-nombre');
+    if (sel) {
+      sel.innerHTML = '<option value="">Selecciona...</option>';
+      personalData.forEach(function(p) {
+        var op = document.createElement('option');
+        op.value = p.nombre_sistema; op.textContent = p.nombre_sistema;
+        sel.appendChild(op);
+      });
+    }
+  });
+
+  // Fecha hoy por defecto
+  if (document.getElementById('bh-fecha') && !document.getElementById('bh-fecha').value) {
+    var h = new Date();
+    document.getElementById('bh-fecha').value = h.getFullYear() + '-' + String(h.getMonth()+1).padStart(2,'0') + '-' + String(h.getDate()).padStart(2,'0');
+  }
+
+  fetchJSON(SCRIPT_URL + '?accion=listarBancoHoras').then(function(data) {
+    var saldos = data.saldos || [];
+    var registros = data.registros || [];
+
+    var tbodyS = document.getElementById('bh-saldos-tabla');
+    if (saldos.length === 0) {
+      tbodyS.innerHTML = '<tr><td colspan="2" class="loading-cell">Sin movimientos</td></tr>';
+    } else {
+      tbodyS.innerHTML = saldos.map(function(s) {
+        var min = s.saldo_min;
+        var signo = min >= 0 ? '+' : '';
+        var color = min > 0 ? 'var(--green)' : min < 0 ? 'var(--red)' : 'var(--text3)';
+        var formato = fmtMinutos(min);
+        return '<tr><td>' + s.nombre + '</td><td class="mono" style="color:' + color + ';font-weight:600">' + signo + formato + '</td></tr>';
+      }).join('');
+    }
+
+    var tbodyH = document.getElementById('bh-historial-tabla');
+    if (registros.length === 0) {
+      tbodyH.innerHTML = '<tr><td colspan="7" class="loading-cell">Sin movimientos</td></tr>';
+    } else {
+      var registrosRev = registros.slice().reverse();
+      tbodyH.innerHTML = '';
+      registrosRev.forEach(function(r) {
+        var tiempo = (r.horas > 0 ? r.horas + 'h ' : '') + (r.minutos > 0 ? r.minutos + 'm' : (r.horas === 0 ? '0m' : ''));
+        var signo = r.tipo.toLowerCase() === 'compensacion' ? '-' : '+';
+        var color = signo === '+' ? 'var(--green)' : 'var(--red)';
+        var saldoFmt = (r.saldo_min >= 0 ? '+' : '') + fmtMinutos(r.saldo_min);
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td class="mono">' + r.fecha + '</td>' +
+          '<td>' + r.nombre + '</td>' +
+          '<td><span class="badge" style="background:' + color + ';color:white">' + r.tipo + '</span></td>' +
+          '<td class="mono" style="color:' + color + ';font-weight:600">' + signo + tiempo + '</td>' +
+          '<td class="mono">' + saldoFmt + '</td>' +
+          '<td style="font-size:11px">' + (r.obs||'') + '</td>' +
+          '<td></td>';
+        var btn = document.createElement('button');
+        btn.className = 'btn btn-red';
+        btn.style.cssText = 'height:26px;font-size:11px';
+        btn.textContent = 'X';
+        btn.onclick = function() { eliminarBancoHoras(r.fila); };
+        tr.lastElementChild.appendChild(btn);
+        tbodyH.appendChild(tr);
+      });
+    }
+  });
+}
+
+function fmtMinutos(min) {
+  var abs = Math.abs(min);
+  var h = Math.floor(abs/60);
+  var m = abs%60;
+  if (h === 0) return m + 'm';
+  if (m === 0) return h + 'h';
+  return h + 'h ' + m + 'm';
+}
+
+function agregarBancoHoras() {
+  var nombre = document.getElementById('bh-nombre').value;
+  var fechaInput = document.getElementById('bh-fecha').value;
+  var tipo = document.getElementById('bh-tipo').value;
+  var horas = document.getElementById('bh-horas').value || '0';
+  var minutos = document.getElementById('bh-minutos').value || '0';
+  var obs = document.getElementById('bh-obs').value.trim();
+
+  if (!nombre || !fechaInput) { alert('Selecciona trabajador y fecha'); return; }
+  if (parseInt(horas) === 0 && parseInt(minutos) === 0) { alert('Indica horas o minutos'); return; }
+
+  var fp = fechaInput.split('-');
+  var fechaFmt = fp[2] + '/' + fp[1] + '/' + fp[0];
+
+  fetchJSON(SCRIPT_URL + '?accion=agregarBancoHoras' +
+    '&nombre=' + encodeURIComponent(nombre) +
+    '&fecha=' + encodeURIComponent(fechaFmt) +
+    '&tipo=' + encodeURIComponent(tipo) +
+    '&horas=' + horas +
+    '&minutos=' + minutos +
+    '&obs=' + encodeURIComponent(obs)
+  ).then(function(data) {
+    if (data.status === 'ok') {
+      document.getElementById('bh-horas').value = '0';
+      document.getElementById('bh-minutos').value = '0';
+      document.getElementById('bh-obs').value = '';
+      cargarBancoHoras();
+    } else alert('Error: ' + data.message);
+  });
+}
+
+function eliminarBancoHoras(fila) {
+  if (!confirm('Eliminar este movimiento?')) return;
+  fetchJSON(SCRIPT_URL + '?accion=eliminarBancoHoras&fila=' + fila).then(function(data) {
+    if (data.status === 'ok') cargarBancoHoras();
+    else alert('Error: ' + data.message);
+  });
+}
+
 </script>
 
 <!-- Modal Rango de Fechas -->
