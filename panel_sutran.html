@@ -639,6 +639,12 @@ window.onload = function() {
     localStorage.setItem('sutran_anio', this.value);
   });
   cargarPersonal();
+  // Cargar estados al inicio
+  fetchJSON(SCRIPT_URL + '?accion=listarEstados').then(function(data) {
+    if (data.estados && data.estados.length > 0) {
+      window._estadosCache = ['PROGRAMADO','REVISION'].concat(data.estados);
+    }
+  });
 };
 
 // PERSONAL BASE
