@@ -1519,6 +1519,27 @@ function abrirRangoFechas() {
     op.textContent = p.nombre_sistema;
     sel.appendChild(op);
   });
+  // Poblar selector de estados desde la leyenda
+  var selEst = document.getElementById('rango-estado');
+  selEst.innerHTML = '';
+  fetchJSON(SCRIPT_URL + '?accion=listarLeyendaCompleta').then(function(data) {
+    var ley = data.leyenda || [];
+    if (ley.length === 0) {
+      // Fallback a estados del cache
+      var ests = (window._estadosCache || ['A','T','F','DS','V','CPSS','CO']).filter(function(e){return e!=='PROGRAMADO'&&e!=='REVISION';});
+      ests.forEach(function(e) {
+        var op = document.createElement('option');
+        op.value = e; op.textContent = e;
+        selEst.appendChild(op);
+      });
+    } else {
+      ley.forEach(function(item) {
+        var op = document.createElement('option');
+        op.value = item.cod; op.textContent = item.cod + ' - ' + item.desc;
+        selEst.appendChild(op);
+      });
+    }
+  });
 }
 
 function cerrarRangoFechas() {
@@ -1873,21 +1894,7 @@ function agregarProgNuevo() {
       </div>
       <div>
         <label style="font-size:12px;color:#555;display:block;margin-bottom:4px">Estado</label>
-        <select id="rango-estado" style="width:100%;height:36px;padding:0 8px;border:1px solid #ddd;border-radius:4px;font-size:13px">
-          <option value="V">V - Vacaciones</option>
-          <option value="CPSS">CPSS - Compensacion</option>
-          <option value="CO">CO - Comision de servicios</option>
-          <option value="DS">DS - Descanso semanal</option>
-          <option value="DM">DM - Descanso medico</option>
-          <option value="LM">LM - Licencia maternidad</option>
-          <option value="LP">LP - Licencia paternidad</option>
-          <option value="LO">LO - Licencia oficial</option>
-          <option value="LUB">LUB - Licencia uso de beneficios</option>
-          <option value="LS">LS - Licencia sin goce</option>
-          <option value="FE">FE - Feriado</option>
-          <option value="FR">FR - Feriado regional</option>
-          <option value="CP">CP - Compensacion</option>
-        </select>
+        <select id="rango-estado" style="width:100%;height:36px;padding:0 8px;border:1px solid #ddd;border-radius:4px;font-size:13px"></select>
       </div>
       <div>
         <label style="font-size:12px;color:#555;display:block;margin-bottom:4px">Observacion (opcional)</label>
