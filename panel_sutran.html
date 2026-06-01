@@ -628,8 +628,16 @@ actualizarReloj();
 // INIT
 window.onload = function() {
   var now = new Date();
-  document.getElementById('g-mes').value = now.getMonth() + 1;
-  document.getElementById('g-anio').value = now.getFullYear();
+  var mesGuardado = localStorage.getItem('sutran_mes');
+  var anioGuardado = localStorage.getItem('sutran_anio');
+  document.getElementById('g-mes').value = mesGuardado || (now.getMonth() + 1);
+  document.getElementById('g-anio').value = anioGuardado || now.getFullYear();
+  document.getElementById('g-mes').addEventListener('change', function() {
+    localStorage.setItem('sutran_mes', this.value);
+  });
+  document.getElementById('g-anio').addEventListener('change', function() {
+    localStorage.setItem('sutran_anio', this.value);
+  });
   cargarPersonal();
 };
 
@@ -979,11 +987,13 @@ function ejecutar(accion, estadoId) {
 function ejecutarTodo() {
   var pasos = ['unificarMarcaciones','generarAsistenciaFinal','generarReporteMensual','generarReporteImprimir'];
   var i = 0;
+  var mes = document.getElementById('g-mes').value;
+  var anio = document.getElementById('g-anio').value;
   function siguiente() {
     if (i >= pasos.length) { setEstado('proc-estado','ok','  Todo completado'); return; }
     var paso = pasos[i++];
     setEstado('proc-estado','loading','Ejecutando ' + paso + ' (' + i + '/' + pasos.length + ')...');
-    fetchJSON(SCRIPT_URL + '?accion=' + paso).then(function() {
+    fetchJSON(SCRIPT_URL + '?accion=' + paso + '&mes=' + mes + '&anio=' + anio).then(function() {
       setTimeout(siguiente, 500);
     }).catch(function(e) { setEstado('proc-estado','err','  Error en ' + paso + ': ' + e.message); });
   }
