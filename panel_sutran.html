@@ -133,6 +133,9 @@ tr:hover td{background:rgba(79,142,247,0.03)}
     <div class="nav-item" onclick="nav('biometrico',this)">
       <svg viewBox="0 0 24 24" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Biometrico
     </div>
+    <div class="nav-item" onclick="nav('banco_horas',this)">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Banco de Horas
+    </div>
 
     <div class="sidebar-bottom">
       <div class="mes-selector">
@@ -474,6 +477,67 @@ tr:hover td{background:rgba(79,142,247,0.03)}
       </div>
     </div>
 
+    <!-- BANCO DE HORAS -->
+    <div class="panel" id="p-banco_horas">
+      <div class="page-title">Banco de Horas</div>
+      <div class="page-sub">Lleva el control de sobretiempos y compensaciones</div>
+
+      <div class="card">
+        <div class="card-title">Saldo actual por trabajador</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Trabajador</th><th>Saldo</th></tr></thead>
+            <tbody id="bh-saldos-tabla"><tr><td colspan="2" class="loading-cell">Haz clic en Actualizar</td></tr></tbody>
+          </table>
+        </div>
+        <button class="btn btn-primary" onclick="cargarBancoHoras()" style="margin-top:10px">Actualizar</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Agregar movimiento</div>
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Trabajador</label>
+            <select id="bh-nombre"></select>
+          </div>
+          <div class="form-field">
+            <label>Fecha</label>
+            <input type="date" id="bh-fecha">
+          </div>
+          <div class="form-field">
+            <label>Tipo</label>
+            <select id="bh-tipo">
+              <option value="Sobretiempo">Sobretiempo (+)</option>
+              <option value="Compensacion">Compensacion (-)</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Horas</label>
+            <input type="number" id="bh-horas" min="0" max="24" value="0" style="width:80px">
+          </div>
+          <div class="form-field">
+            <label>Minutos</label>
+            <input type="number" id="bh-minutos" min="0" max="59" value="0" style="width:80px">
+          </div>
+          <div class="form-field" style="grid-column:span 2">
+            <label>Observacion</label>
+            <input type="text" id="bh-obs" placeholder="Ej: Compensa sobretiempo del 15/05">
+          </div>
+        </div>
+        <button class="btn btn-green" onclick="agregarBancoHoras()" style="margin-top:10px">+ Agregar</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Historial de movimientos</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Fecha</th><th>Trabajador</th><th>Tipo</th><th>Tiempo</th><th>Saldo acumulado</th><th>Observacion</th><th>Accion</th></tr></thead>
+            <tbody id="bh-historial-tabla"><tr><td colspan="7" class="loading-cell">Haz clic en Actualizar</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
       </div>
 </div>
 
@@ -493,6 +557,7 @@ function nav(id, el) {
   el.classList.add('active');
   if (id === 'personal') { cargarTablaPersonal(); cargarTablaLugares(); }
   if (id === 'regmanual') cargarRegistroManual();
+  if (id === 'banco_horas') cargarBancoHoras();
   if (id === 'biometrico') {
     cargarTablaBio();
     // Cargar select de trabajadores con DNI
