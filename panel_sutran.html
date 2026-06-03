@@ -136,6 +136,9 @@ tr:hover td{background:rgba(79,142,247,0.03)}
     <div class="nav-item" onclick="nav('banco_horas',this)">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Banco de Horas
     </div>
+    <div class="nav-item" onclick="nav('whatsapp',this)">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>Procesar WhatsApp
+    </div>
 
     <div class="sidebar-bottom">
       <div class="mes-selector">
@@ -474,6 +477,37 @@ tr:hover td{background:rgba(79,142,247,0.03)}
           <table><thead><tr><th>Fila</th><th>DNI</th><th>Nombre</th><th>Fecha</th><th>Hora</th><th>Tipo</th><th>Accion</th></tr></thead>
           <tbody id="bio-tabla"><tr><td colspan="7" class="loading-cell">Haz clic en Actualizar</td></tr></tbody></table>
         </div>
+      </div>
+    </div>
+
+    <!-- PROCESAR WHATSAPP -->
+    <div class="panel" id="p-whatsapp">
+      <div class="page-title">Procesar Mensajes de WhatsApp</div>
+      <div class="page-sub">Pega los mensajes del grupo de WhatsApp y se agregaran automaticamente a REGISTROS</div>
+
+      <div class="card">
+        <div class="card-title">Formato esperado</div>
+        <pre style="background:var(--bg3);padding:10px;border-radius:6px;font-size:11px;color:var(--text2);white-space:pre-wrap">*Tipo*: Inicio de Turno
+*Nombre*: Abner Leon Pichen
+*DNI*: 42563290
+*Fecha*: 02/06/2026
+*Hora*: 08:12
+*Lugar*: Oficina UDLL</pre>
+        <div style="font-size:11px;color:var(--text3);margin-top:6px">El sistema tambien acepta formatos parecidos (con o sin asteriscos, "Termino"/"Fin", etc).</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Pegar mensajes del WhatsApp</div>
+        <textarea id="wa-texto" rows="12" placeholder="Pega aqui los mensajes del grupo de WhatsApp..." style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:6px;font-family:inherit;font-size:12px"></textarea>
+        <div style="margin-top:10px">
+          <button class="btn btn-green" onclick="procesarWhatsApp()">Procesar</button>
+          <button class="btn" onclick="document.getElementById('wa-texto').value=''">Limpiar</button>
+        </div>
+      </div>
+
+      <div class="card" id="wa-resultado-card" style="display:none">
+        <div class="card-title">Resultado</div>
+        <div id="wa-resultado"></div>
       </div>
     </div>
 
@@ -2056,6 +2090,45 @@ function eliminarBancoHoras(fila) {
   fetchJSON(SCRIPT_URL + '?accion=eliminarBancoHoras&fila=' + fila).then(function(data) {
     if (data.status === 'ok') cargarBancoHoras();
     else alert('Error: ' + data.message);
+  });
+}
+
+
+
+// PROCESAR WHATSAPP
+function procesarWhatsApp() {
+  var texto = document.getElementById('wa-texto').value.trim();
+  if (!texto) { alert('Pega los mensajes primero'); return; }
+
+  var card = document.getElementById('wa-resultado-card');
+  var res = document.getElementById('wa-resultado');
+  card.style.display = 'block';
+  res.innerHTML = '<div style="color:var(--text2)">Procesando...</div>';
+
+  fetchJSON(SCRIPT_URL + '?accion=procesarRegistrosWhatsApp&texto=' + encodeURIComponent(texto)).then(function(data) {
+    if (data.status !== 'ok') {
+      res.innerHTML = '<div style="color:var(--red)">Error: ' + data.message + '</div>';
+      return;
+    }
+    var r = data.resultado || {};
+    var html = '<div style="margin-bottom:10px"><strong style="color:var(--green)">' + (r.procesados||0) + ' procesados</strong>';
+    if (r.errores && r.errores.length > 0) {
+      html += ' &nbsp; <strong style="color:var(--red)">' + r.errores.length + ' errores</strong>';
+    }
+    html += '</div>';
+
+    if (r.detalles && r.detalles.length > 0) {
+      html += '<div style="margin-bottom:10px"><strong>Procesados:</strong><ul style="margin:5px 0;padding-left:20px;font-size:12px">';
+      r.detalles.forEach(function(d) { html += '<li>' + d + '</li>'; });
+      html += '</ul></div>';
+    }
+
+    if (r.errores && r.errores.length > 0) {
+      html += '<div><strong style="color:var(--red)">Errores:</strong><ul style="margin:5px 0;padding-left:20px;font-size:12px;color:var(--text2)">';
+      r.errores.forEach(function(e) { html += '<li>' + e + '</li>'; });
+      html += '</ul></div>';
+    }
+    res.innerHTML = html;
   });
 }
 
