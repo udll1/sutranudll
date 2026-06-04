@@ -702,7 +702,9 @@ function getAnio() { return document.getElementById('g-anio').value; }
 
 function badge(nom, obs) {
   if (!nom) return '<span style="color:var(--text3)"> </span>';
-  var title = obs ? ' title="' + obs + '" style="cursor:help"' : '';
+  // Solo mostrar tooltip si hay observacion real (no vacia, no solo espacios) y no es DS
+  var obsLimpio = (obs || '').toString().trim();
+  var title = (obsLimpio && nom !== 'DS') ? ' title="' + obsLimpio.replace(/"/g, '&quot;') + '" style="cursor:help"' : '';
   return '<span class="badge b-' + nom + '"' + title + '>' + nom + '</span>';
 }
 
