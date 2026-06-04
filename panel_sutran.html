@@ -276,6 +276,7 @@ tr:hover td{background:rgba(79,142,247,0.03)}
         <button class="btn" onclick="imprimirReporte('generarExcelTardanzas',this)" style="background:var(--orange);color:white;font-weight:500">🖨 Imprimir Tardanzas</button>
         <button class="btn btn-green" onclick="descargarExcel('generarExcelDetalle',this)" style="background:var(--purple)">⬇ Excel Detalle</button>
         <button class="btn" onclick="imprimirReporte('generarExcelDetalle',this)" style="background:var(--purple);color:white;font-weight:500">🖨 Imprimir Detalle</button>
+        <button class="btn btn-green" onclick="descargarExcel('generarExcelSobretiempo',this)" style="background:var(--green)">⬇ Excel Sobretiempo</button>
       </div>
       <div class="card" style="padding:12px">
         <div class="rep-wrap" id="mensual-contenido"><div class="loading-cell">Carga el reporte</div></div>
@@ -1137,12 +1138,14 @@ function descargarExcel(accion, btn) {
 
   var tipo = accion === 'generarExcelFirmas' ? 'firmas' :
              accion === 'generarExcelTardanzas' ? 'tardanzas' :
-             accion === 'generarExcelDetalle' ? 'detalle' : 'mensual';
+             accion === 'generarExcelDetalle' ? 'detalle' :
+             accion === 'generarExcelSobretiempo' ? 'sobretiempo' : 'mensual';
   var meses = ["","ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
   var mesNom = meses[parseInt(mes)];
 
   var accionDatos = tipo === 'tardanzas' ? 'getDatosReporteTardanzas' :
-                    tipo === 'detalle' ? 'getDatosReporteDetalle' : 'getDatosReporte';
+                    tipo === 'detalle' ? 'getDatosReporteDetalle' :
+                    tipo === 'sobretiempo' ? 'getDatosReporteSobretiempo' : 'getDatosReporte';
 
   fetchJSON(SCRIPT_URL + '?accion=' + accionDatos + '&mes=' + mes + '&anio=' + anio).then(function(data) {
     if (!data.trabajadores) {
@@ -1190,12 +1193,14 @@ function imprimirReporte(accion, btn) {
 
   var tipo = accion === 'generarExcelFirmas' ? 'firmas' :
              accion === 'generarExcelTardanzas' ? 'tardanzas' :
-             accion === 'generarExcelDetalle' ? 'detalle' : 'mensual';
+             accion === 'generarExcelDetalle' ? 'detalle' :
+             accion === 'generarExcelSobretiempo' ? 'sobretiempo' : 'mensual';
   var meses = ["","ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
   var mesNom = meses[parseInt(mes)];
 
   var accionDatos = tipo === 'tardanzas' ? 'getDatosReporteTardanzas' :
-                    tipo === 'detalle' ? 'getDatosReporteDetalle' : 'getDatosReporte';
+                    tipo === 'detalle' ? 'getDatosReporteDetalle' :
+                    tipo === 'sobretiempo' ? 'getDatosReporteSobretiempo' : 'getDatosReporte';
 
   fetchJSON(SCRIPT_URL + '?accion=' + accionDatos + '&mes=' + mes + '&anio=' + anio).then(function(data) {
     if (!data.trabajadores) {
